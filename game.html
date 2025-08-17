@@ -18,46 +18,42 @@
     <template data-tpl="province-card">
       <div class="province-card card p-3 mb-3 {{cardClass}}">
         <h2 class="card-title" data-tpl-key="name">{{name}}</h2>
-        <ul class="list-unstyled mb-0">
-          <li>Nahrung: <strong data-tpl-key="food">{{food}}</strong> / {{foodCap}}</li>
-          <li>Gold: <strong data-tpl-key="gold">{{gold}}</strong></li>
-          <li>Truppen: <strong data-tpl-key="troops">{{troops}}</strong></li>
-          <li>Arbeiter: <strong data-tpl-key="workers">{{workers}}</strong></li>
-          <li>Moral: <strong data-tpl-key="morale">{{morale}}</strong></li>
-          <li>Gebäude: <span data-tpl-key="buildings">{{buildings}}</span></li>
+        <ul class="list-unstyled mb-0 stats-list">
+          <li>
+            <img class="icon" src="assets/img/icons/food.png" alt="Nahrung" />
+            Nahrung: <strong data-tpl-key="food">{{food}}</strong> / {{foodCap}}
+          </li>
+          <li>
+            <img class="icon" src="assets/img/icons/gold.png" alt="Gold" />
+            Gold: <strong data-tpl-key="gold">{{gold}}</strong>
+          </li>
+          <li>
+            <img class="icon" src="assets/img/icons/troops.png" alt="Truppen" />
+            Truppen: <strong data-tpl-key="troops">{{troops}}</strong>
+          </li>
+          <li>
+            <img class="icon" src="assets/img/icons/workers.png" alt="Arbeiter" />
+            Arbeiter: <strong data-tpl-key="workers">{{workers}}</strong>
+          </li>
+          <li>
+            <img class="icon" src="assets/img/icons/morale.png" alt="Moral" />
+            Moral: <strong data-tpl-key="morale">{{morale}}</strong>
+          </li>
+          <li>
+            Gebäude: <span data-tpl-key="buildings">{{buildings}}</span>
+          </li>
         </ul>
       </div>
     </template>
 
-    <template data-tpl="event-options">
-      <div class="event-options">
+    <!-- Generic options list template (used for events/build/recruit) -->
+    <template data-tpl="options-list">
+      <div class="options-list">
         <div data-tpl-foreach="options">
           <button
-            class="btn btn-primary mb-2"
+            class="btn {{btnClass}} mb-2"
             data-tpl-key="label"
-            data-tpl-event="click:chooseEventOption"></button>
-        </div>
-      </div>
-    </template>
-
-    <template data-tpl="build-options">
-      <div class="build-options">
-        <div data-tpl-foreach="options">
-          <button
-            class="btn btn-secondary mb-2"
-            data-tpl-key="label"
-            data-tpl-event="click:selectBuild"></button>
-        </div>
-      </div>
-    </template>
-
-    <template data-tpl="recruit-options">
-      <div class="recruit-options">
-        <div data-tpl-foreach="options">
-          <button
-            class="btn btn-secondary mb-2"
-            data-tpl-key="label"
-            data-tpl-event="click:selectRecruit"></button>
+            data-tpl-event="click:onSelect"></button>
         </div>
       </div>
     </template>
@@ -81,6 +77,9 @@
       <img id="title-image" src="assets/img/header.png" alt="Titelbild" class="img-fluid rounded" />
       <h1>Crown &amp; Crisis</h1>
       <p id="month-counter">Monat 1 / 24</p>
+      <div id="day-progress" class="day-progress" aria-hidden="true">
+        <div class="bar"></div>
+      </div>
     </header>
     <main>
       <!-- Spielbereich: getrennt nach Spieler- und Vasallen-Provinzen -->

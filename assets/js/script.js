@@ -82,6 +82,22 @@ function updateDateUI() {
   if (!monthCounter) return;
   const dateStr = formatDate(currentDate);
   monthCounter.textContent = `${dateStr} — Monat ${month} / ${maxMonths}`;
+  // Update day progress bar
+  const prog = document.getElementById('day-progress');
+  if (prog) {
+    const bar = prog.querySelector('.bar');
+    if (bar) {
+      const totalDays = daysInMonth(currentDate.getFullYear(), currentDate.getMonth());
+      const day = currentDate.getDate();
+      const pct = Math.max(0, Math.min(100, Math.round(((day - 1) / totalDays) * 100)));
+      bar.style.width = pct + '%';
+    }
+  }
+}
+
+function daysInMonth(year, monthIndex) {
+  // monthIndex: 0-11
+  return new Date(year, monthIndex + 1, 0).getDate();
 }
 
 function pauseLoop() {
@@ -403,17 +419,16 @@ function showEvent() {
   }
   const optionsEl = document.getElementById('event-options');
   optionsEl.innerHTML = '';
-  // Render Optionen via EltheonJS templating
-  const optionsModel = currentEvent.options.map((o) => ({ label: o.label }));
+  // Render Optionen via generische Optionsliste
+  const optionsModel = currentEvent.options.map((o) => ({ label: o.label, btnClass: 'btn-primary' }));
   if (window.EltheonJS && window.EltheonJS.templatingExt) {
-    const tpl = window.EltheonJS.templatingExt.render('event-options', { options: optionsModel }, {
-      chooseEventOption: (_e, el) => {
+    const tpl = window.EltheonJS.templatingExt.render('options-list', { options: optionsModel }, {
+      onSelect: (_e, el) => {
         const label = el.getValue();
         const opt = currentEvent && currentEvent.options.find(o => o.label === label);
         if (!opt) return;
         opt.effect();
         panel.classList.add('hidden');
-        // Ereignis gewählt – Loop läuft ohnehin weiter
         currentEvent = null;
       }
     });
@@ -534,8 +549,9 @@ function showBuildOptions() {
     };
   });
   if (window.EltheonJS && window.EltheonJS.templatingExt) {
-    const tpl = window.EltheonJS.templatingExt.render('build-options', { options: buildModels }, {
-      selectBuild: (_e, el) => {
+    const models = buildModels.map(m => Object.assign({ btnClass: 'btn-secondary' }, m));
+    const tpl = window.EltheonJS.templatingExt.render('options-list', { options: models }, {
+      onSelect: (_e, el) => {
         const label = el.getValue();
         const bld = buildings.find(b => `${b.name} – ${b.description} (Kosten: ${b.cost.gold}\u00A0Gold, ${b.requiredWorkers}\u00A0Arbeiter)` === label);
         if (!bld) return;
@@ -607,8 +623,9 @@ function showRecruitOptions() {
   ];
   const models = actions.map((a) => ({ label: a.label, enabled: player.gold >= a.cost }));
   if (window.EltheonJS && window.EltheonJS.templatingExt) {
-    const tpl = window.EltheonJS.templatingExt.render('recruit-options', { options: models }, {
-      selectRecruit: (_e, el) => {
+    const opts = models.map(m => Object.assign({ btnClass: 'btn-secondary' }, m));
+    const tpl = window.EltheonJS.templatingExt.render('options-list', { options: opts }, {
+      onSelect: (_e, el) => {
         const label = el.getValue();
         const act = actions.find(a => a.label === label);
         if (!act) return;

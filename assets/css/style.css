@@ -65,6 +65,22 @@ header #month-counter {
   font-size: 1rem;
   color: #5a3e18;
 }
+/* Day progress bar under the month counter */
+#day-progress.day-progress {
+  width: 100%;
+  max-width: 420px;
+  height: 6px;
+  margin: 6px auto 0;
+  background: rgba(90, 62, 24, 0.15);
+  border-radius: 999px;
+  overflow: hidden;
+}
+#day-progress .bar {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, #835c32, #b0895a);
+  transition: width 180ms ease-out;
+}
 
 main {
   display: flex;
@@ -119,6 +135,22 @@ main {
   margin: 4px 0;
 }
 
+/* Icon utilities for stat lists */
+.icon {
+  width: 22px;
+  height: 22px;
+  vertical-align: -4px;
+  margin-right: 6px;
+  image-rendering: crisp-edges;
+  image-rendering: -webkit-optimize-contrast;
+  opacity: 0.9;
+}
+.stats-list li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .panel {
   background: rgba(255, 255, 255, 0.9);
   border-radius: 8px;
@@ -132,6 +164,9 @@ main {
   margin-top: 0;
   color: #5a3e18;
   font-family: var(--font-heading);
+  border-bottom: 1px solid rgba(90, 62, 24, 0.2);
+  padding-bottom: 6px;
+  margin-bottom: 12px;
 }
 
 /* Unter-Überschriften im Build-Panel */
@@ -144,6 +179,15 @@ main {
 
 .options {
   margin-top: 10px;
+}
+
+/* Generic options list styles */
+.options-list .btn {
+  text-align: left;
+}
+.options-list .btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
 }
 
 footer {
