@@ -283,33 +283,33 @@ function updateUI() {
   const aiContainer = document.getElementById('ai-provinces');
   playerContainer.innerHTML = '';
   aiContainer.innerHTML = '';
-  Object.keys(provinces).forEach(key => {
-    const prov = provinces[key];
-    const card = document.createElement('div');
-    card.className = 'province-card';
-    // Unterscheide Spieler- und Vasallen-Karten über Klassen für Styling
-    if (key === 'player') {
-      card.classList.add('player-card');
-    } else {
-      card.classList.add('ai-card');
-    }
-    card.innerHTML = `
-      <h2>${prov.name}</h2>
-      <ul>
-        <li>Nahrung: <strong>${Math.round(prov.food)}</strong> / ${prov.foodCap}</li>
-        <li>Gold: <strong>${Math.round(prov.gold)}</strong></li>
-        <li>Truppen: <strong>${Math.round(prov.troops)}</strong></li>
-        <li>Arbeiter: <strong>${Math.round(prov.workers)}</strong></li>
-        <li>Moral: <strong>${Math.round(prov.morale)}</strong></li>
-        <li>Gebäude: ${prov.buildings.length > 0 ? prov.buildings.join(', ') : '—'}</li>
-      </ul>
-    `;
-    if (key === 'player') {
-      playerContainer.appendChild(card);
-    } else {
-      aiContainer.appendChild(card);
-    }
-  });
+    Object.keys(provinces).forEach(key => {
+      const prov = provinces[key];
+      const card = document.createElement('div');
+      card.className = 'province-card card p-3 mb-3';
+      // Unterscheide Spieler- und Vasallen-Karten über Klassen für Styling
+      if (key === 'player') {
+        card.classList.add('player-card');
+      } else {
+        card.classList.add('ai-card');
+      }
+      card.innerHTML = `
+        <h2 class="card-title">${prov.name}</h2>
+        <ul class="list-unstyled mb-0">
+          <li>Nahrung: <strong>${Math.round(prov.food)}</strong> / ${prov.foodCap}</li>
+          <li>Gold: <strong>${Math.round(prov.gold)}</strong></li>
+          <li>Truppen: <strong>${Math.round(prov.troops)}</strong></li>
+          <li>Arbeiter: <strong>${Math.round(prov.workers)}</strong></li>
+          <li>Moral: <strong>${Math.round(prov.morale)}</strong></li>
+          <li>Gebäude: ${prov.buildings.length > 0 ? prov.buildings.join(', ') : '—'}</li>
+        </ul>
+      `;
+      if (key === 'player') {
+        playerContainer.appendChild(card);
+      } else {
+        aiContainer.appendChild(card);
+      }
+    });
 }
 
 function showEvent() {
@@ -329,6 +329,7 @@ function showEvent() {
   optionsEl.innerHTML = '';
   currentEvent.options.forEach((opt, idx) => {
     const btn = document.createElement('button');
+    btn.classList.add('btn', 'btn-primary', 'mb-2');
     btn.textContent = opt.label;
     btn.addEventListener('click', () => {
       // Effekt ausführen
@@ -435,6 +436,7 @@ function showBuildOptions() {
   ];
   buildings.forEach(bld => {
     const btn = document.createElement('button');
+    btn.classList.add('btn', 'btn-secondary', 'mb-2');
     btn.innerHTML = `${bld.name} – ${bld.description} (Kosten: ${bld.cost.gold} Gold, ${bld.requiredWorkers} Arbeiter)`;
     const canAfford = player.gold >= bld.cost.gold && player.food >= (bld.cost.food || 0);
     if (!bld.available() || !canAfford) {
@@ -485,6 +487,7 @@ function showRecruitOptions() {
   ];
   actions.forEach(act => {
     const btn = document.createElement('button');
+    btn.classList.add('btn', 'btn-secondary', 'mb-2');
     btn.textContent = act.label;
     if (player.gold < act.cost) {
       btn.disabled = true;
