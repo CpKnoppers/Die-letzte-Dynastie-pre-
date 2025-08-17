@@ -71,8 +71,8 @@ let tickMs = 1000;
 const TICK_KEY = 'gameTick';
 
 function formatDate(d) {
-  const dd = String(d.getDate()).padStart(1, '0');
-  const mm = String(d.getMonth() + 1);
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
   const yyyy = d.getFullYear();
   return `${dd}.${mm}.${yyyy}`;
 }
