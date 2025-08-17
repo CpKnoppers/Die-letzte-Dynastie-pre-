@@ -33,15 +33,20 @@
               <span>Nahrung: <strong data-tpl-key="food">{{food}}</strong> / {{foodCap}}</span>
             </div>
             <div class="meter" aria-hidden="true"><div class="bar" style="width: {{foodPct}}%;"></div></div>
-            <div class="hint" aria-hidden="true" title="{{foodHint}}">≈ {{foodNet}} / Monat</div>
-            <div class="note cap" data-tpl-if="capNote" data-tpl-key="capNote">{{capNote}}</div>
+            <div class="subline" aria-hidden="true">
+              <div class="hint" title="{{foodHint}}">≈ {{foodNet}} / Monat</div>
+              <div class="note cap" data-tpl-if="capNote" data-tpl-key="capNote">{{capNote}}</div>
+            </div>
           </div>
-          <div class="stat">
+          <div class="stat gold-stat">
             <div class="stat-row">
               <span class="icon icon-gold" aria-hidden="true"></span>
               <span>Gold: <strong data-tpl-key="gold">{{gold}}</strong></span>
             </div>
-            <div class="hint" aria-hidden="true">≈ {{goldNet}} / Monat</div>
+            <div class="subline" aria-hidden="true">
+              <div class="hint">≈ {{goldNet}} / Monat</div>
+              <div class="cap-spacer" aria-hidden="true"></div>
+            </div>
           </div>
           <div class="stat">
             <div class="stat-row">
@@ -61,7 +66,10 @@
               <span>Moral: <strong data-tpl-key="morale">{{morale}}</strong></span>
             </div>
             <div class="meter morale" aria-hidden="true"><div class="bar {{moraleClass}}" style="width: {{moralePct}}%;"></div></div>
-            <div class="hint" aria-hidden="true" title="{{moraleHint}}">≈ {{moraleDelta}} / Monat</div>
+            <div class="subline" aria-hidden="true">
+              <div class="hint" title="{{moraleHint}}">≈ {{moraleDelta}} / Monat</div>
+              <div class="cap-spacer" aria-hidden="true"></div>
+            </div>
           </div>
         </div>
         <div class="badges" data-tpl-if="hasBadges">

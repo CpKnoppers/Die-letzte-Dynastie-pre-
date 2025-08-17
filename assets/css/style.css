@@ -218,8 +218,29 @@ main {
 .stat .meter.morale .bar { background: #3a9d23; }
 .stat .meter.morale .bar.med { background: #d9a321; }
 .stat .meter.morale .bar.low { background: #b44; }
-.stat .hint { font-size: 0.85rem; color: rgba(90,62,24,0.9); margin-top: 2px; }
-.note.cap { font-size: 0.8rem; color: #a34; margin-top: 2px; }
+.stat .subline {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 2px;
+  flex-wrap: nowrap;
+}
+.stat .hint {
+  font-size: 0.85rem;
+  color: rgba(90,62,24,0.9);
+  margin-top: 0;
+  flex: 1 1 auto;
+  min-width: 0;               /* enable ellipsis */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.note.cap { font-size: 0.8rem; color: #a34; margin-top: 0; white-space: nowrap; }
+/* Gold prediction: nudge down by 10px to align with rows that include a meter */
+.gold-stat .subline { margin-top: 12px; }
+/* Reserve space on stats without a cap note so rows align nicely */
+.cap-spacer { visibility: hidden; min-width: 6ch; height: 1em; }
 @media (max-width: 768px) {
   .stats-grid { gap: 8px 10px; }
   .stat .hint { font-size: 0.8rem; }
