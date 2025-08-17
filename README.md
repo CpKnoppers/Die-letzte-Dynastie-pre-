@@ -1,6 +1,6 @@
 # Zusammenfassung des aktuellen Spielkonzepts
 
-*(Projekt: **Die letzte Dynastie** · Arbeitstitel: **Crown & Crisis**)*
+*(Projekt: **Die letzte Dynastie** · Arbeitstitel: **Die letzte Dynastie**)*
 
 **Elevator Pitch & Zielgruppe.**
 Ein 20–30-minütiges, simultan-zuggesteuertes Team-Coop-Strategiespiel (auch solo spielbar): Ein Spieler ist König (asymmetrische Rolle), 2–4 weitere sind Herzöge/Vasallen mit eigenen Ländereien. In \~8–12 “Saisons” (\~2 In-Game-Jahre) rüstet ihr das Reich wirtschaftlich und militärisch gegen eine übermächtige Invasion. Hoher Zeitdruck (typ. 120 s pro Saison), knappe Verhandlungen, brüchiges Vertrauen und feindliche Einflussnahme prägen jede Partie. Zielgruppe sind Coop-Fans, die schnelles, politisch-strategisches “Overcooked-Tempo” wollen; kurze Sessions, hohe Wiederspielbarkeit, niedrige Einstiegshürde, hohe Meisterungstiefe. Optional: fairer Meta-Fortschritt (kosmetisch, leichte Startoptionen).&#x20;

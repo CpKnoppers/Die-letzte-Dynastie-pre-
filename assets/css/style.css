@@ -1,4 +1,4 @@
-/* Basis-Styling für Crown & Crisis Prototyp */
+/* Basis-Styling für "Die letzte Dynastie" Prototyp */
 :root {
   --font-body: 'EB Garamond', Georgia, 'Times New Roman', serif;
   --font-heading: 'Cinzel', 'EB Garamond', Georgia, serif;
@@ -137,14 +137,28 @@ main {
 
 /* Icon utilities for stat lists */
 .icon {
+  display: inline-block;
   width: 22px;
   height: 22px;
   vertical-align: -4px;
   margin-right: 6px;
-  image-rendering: crisp-edges;
-  image-rendering: -webkit-optimize-contrast;
-  opacity: 0.9;
+  background-color: currentColor; /* Tint to text color */
+  /* Use PNG alpha as mask, color via background-color */
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  opacity: 0.95;
 }
+
+/* Icon masks (use small PNGs as alpha masks) */
+.icon-food    { -webkit-mask-image: url('../img/icons/small/food.png');    mask-image: url('../img/icons/small/food.png'); }
+.icon-gold    { -webkit-mask-image: url('../img/icons/small/gold.png');    mask-image: url('../img/icons/small/gold.png'); }
+.icon-morale  { -webkit-mask-image: url('../img/icons/small/morale.png');  mask-image: url('../img/icons/small/morale.png'); }
+.icon-troops  { -webkit-mask-image: url('../img/icons/small/troops.png');  mask-image: url('../img/icons/small/troops.png'); }
+.icon-workers { -webkit-mask-image: url('../img/icons/small/workers.png'); mask-image: url('../img/icons/small/workers.png'); }
 .stats-list li {
   display: flex;
   align-items: center;

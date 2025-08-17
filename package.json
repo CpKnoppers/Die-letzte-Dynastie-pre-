@@ -2,7 +2,7 @@
   "name": "die-letzte-dynastie-prototype",
   "version": "0.1.0",
   "private": true,
-  "description": "Static prototype for Crown & Crisis with Jest test scaffold",
+  "description": "Static prototype for Die letzte Dynastie with Jest test scaffold",
   "scripts": {
     "test": "jest",
     "sync:host": "bash scripts/sync-to-host.sh"

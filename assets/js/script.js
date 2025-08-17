@@ -1,4 +1,4 @@
-// Crown & Crisis – einfacher Prototyp für Einzelspieler mit zwei KI-Vasallen
+// Die letzte Dynastie – einfacher Prototyp für Einzelspieler mit zwei KI-Vasallen
 
 // Provinzdatenstruktur
 const provinces = {
@@ -419,12 +419,16 @@ function showEvent() {
   }
   const optionsEl = document.getElementById('event-options');
   optionsEl.innerHTML = '';
-  // Render Optionen via generische Optionsliste
-  const optionsModel = currentEvent.options.map((o) => ({ label: o.label, btnClass: 'btn-primary' }));
+  // Render Optionen via generische Optionsliste (mit Icons im Label)
+  const optionsModel = currentEvent.options.map((o) => ({
+    label: o.label,
+    labelHtml: labelToHtml(o.label),
+    btnClass: 'btn-primary'
+  }));
   if (window.EltheonJS && window.EltheonJS.templatingExt) {
     const tpl = window.EltheonJS.templatingExt.render('options-list', { options: optionsModel }, {
       onSelect: (_e, el) => {
-        const label = el.getValue();
+        const label = el.getAttribute('data-origin-label') || el.getValue();
         const opt = currentEvent && currentEvent.options.find(o => o.label === label);
         if (!opt) return;
         opt.effect();
@@ -543,8 +547,10 @@ function showBuildOptions() {
   const buildModels = buildings.map((bld) => {
     const canAfford = player.gold >= bld.cost.gold && player.food >= (bld.cost.food || 0);
     const enabled = bld.available() && canAfford && !buildingUsed;
+    const label = `${bld.name} – ${bld.description} (Kosten: ${bld.cost.gold}\u00A0Gold, ${bld.requiredWorkers}\u00A0Arbeiter)`;
     return {
-      label: `${bld.name} – ${bld.description} (Kosten: ${bld.cost.gold}\u00A0Gold, ${bld.requiredWorkers}\u00A0Arbeiter)`,
+      label,
+      labelHtml: labelToHtml(label),
       enabled
     };
   });
@@ -552,7 +558,7 @@ function showBuildOptions() {
     const models = buildModels.map(m => Object.assign({ btnClass: 'btn-secondary' }, m));
     const tpl = window.EltheonJS.templatingExt.render('options-list', { options: models }, {
       onSelect: (_e, el) => {
-        const label = el.getValue();
+        const label = el.getAttribute('data-origin-label') || el.getValue();
         const bld = buildings.find(b => `${b.name} – ${b.description} (Kosten: ${b.cost.gold}\u00A0Gold, ${b.requiredWorkers}\u00A0Arbeiter)` === label);
         if (!bld) return;
         const canAfford = player.gold >= bld.cost.gold && player.food >= (bld.cost.food || 0);
@@ -621,12 +627,12 @@ function showRecruitOptions() {
       gainWorkers: 50
     }
   ];
-  const models = actions.map((a) => ({ label: a.label, enabled: player.gold >= a.cost }));
+  const models = actions.map((a) => ({ label: a.label, labelHtml: labelToHtml(a.label), enabled: player.gold >= a.cost }));
   if (window.EltheonJS && window.EltheonJS.templatingExt) {
     const opts = models.map(m => Object.assign({ btnClass: 'btn-secondary' }, m));
     const tpl = window.EltheonJS.templatingExt.render('options-list', { options: opts }, {
       onSelect: (_e, el) => {
-        const label = el.getValue();
+        const label = el.getAttribute('data-origin-label') || el.getValue();
         const act = actions.find(a => a.label === label);
         if (!act) return;
         if (player.gold >= act.cost) {
@@ -892,4 +898,26 @@ function scoreOptionLabel(label) {
     score -= 5;
   }
   return score;
+}
+
+// Erzeugt HTML für Labels mit Ressourcen-Icons
+function labelToHtml(label) {
+  if (!label) return '';
+  const iconClass = {
+    Nahrung: 'icon-food',
+    Gold: 'icon-gold',
+    Moral: 'icon-morale',
+    Truppen: 'icon-troops',
+    Arbeiter: 'icon-workers'
+  };
+  // Ersetze Muster wie "+15 Moral" oder "-20 Gold" usw.
+  const minusClass = "[\-\u2010-\u2015\u2212\u2011\u2013]";
+  const re = new RegExp(`(${minusClass}?\\s*\\+?\\s*\\d+)\\s*(Nahrung|Gold|Moral|Truppen|Arbeiter)`, 'gi');
+  let html = label.replace(re, (m, num, unit) => {
+    const u = unit.charAt(0).toUpperCase() + unit.slice(1).toLowerCase();
+    const cls = iconClass[u] || '';
+    if (!cls) return m;
+    return `${num}\u00A0<span class="icon ${cls}" aria-hidden="true"></span>`;
+  });
+  return html;
 }
