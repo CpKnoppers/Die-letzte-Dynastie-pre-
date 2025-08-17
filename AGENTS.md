@@ -37,3 +37,27 @@
 - Keep images optimized (PNG/JPG < 500 KB where possible) to reduce load times.
 - When introducing third‑party libraries, add them under `assets/js/` and document their purpose and license in the PR.
 
+## Sync & Handoff (Local Mirror)
+- Purpose: Keep a writable mirror of the repo on the host for immediate access.
+- Target path (host/WSL): `/mnt/c/Users/Reemon.CpKnoppers/Source/Repos/dld/`.
+- Command: `npm run sync:host` (copies files with overwrite; excludes `.git`, `node_modules`).
+- Script location: `scripts/sync-to-host.sh`.
+- Notes:
+  - Uses `rsync` if available (fast, deletes removed files). Falls back to `cp -a` without deletion.
+  - Default exclusions: `.git`, `.DS_Store`. Adjust in script if needed.
+  - To change target: pass as first arg, e.g., `bash scripts/sync-to-host.sh /custom/target`.
+  - Use `--clean` to remove stale files in target when `rsync` is not available:
+    - `bash scripts/sync-to-host.sh /custom/target --clean`
+
+## Project Recap
+- Current refactor: moved UI rendering to EltheonJS templating.
+  - Province cards, event options, build/recruit options, end summary use templates.
+  - Use `EltheonJS.templatingExt.init()` once on DOM ready; render via `templatingExt.render(...)`.
+  - For `data-tpl-foreach`, place it on a child element inside a wrapper, not on the template root.
+  - Disable states for buttons are applied after render (no `disabled="{{...}}"` in templates).
+- State: not used yet; ignore `EltheonJS.state` for now.
+- Sync: use `npm run sync:host` to mirror files to the Windows path.
+- Testing: manual playtest — verify monthly tick, events, build/recruit, and end screen; no console errors.
+- Next candidates:
+  - Consolidate options rendering to a generic `options-list` template + helper.
+  - Optional: template wrappers for panels and event headers; later consider integrating `bind`/`state`.

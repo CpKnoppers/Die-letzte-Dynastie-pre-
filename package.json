@@ -4,10 +4,10 @@
   "private": true,
   "description": "Static prototype for Crown & Crisis with Jest test scaffold",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "sync:host": "bash scripts/sync-to-host.sh"
   },
   "devDependencies": {
     "jest": "^29.7.0"
   }
 }
-

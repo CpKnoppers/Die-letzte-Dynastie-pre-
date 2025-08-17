@@ -9,3 +9,5 @@ coverage/
 # OS
 .DS_Store
 
+# Local helper scripts
+scripts/sync-to-host.sh

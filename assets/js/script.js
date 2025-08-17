@@ -283,25 +283,39 @@ function updateUI() {
   const aiContainer = document.getElementById('ai-provinces');
   playerContainer.innerHTML = '';
   aiContainer.innerHTML = '';
-    Object.keys(provinces).forEach(key => {
-      const prov = provinces[key];
-      const card = document.createElement('div');
-      card.className = 'province-card card p-3 mb-3';
-      // Unterscheide Spieler- und Vasallen-Karten über Klassen für Styling
+  Object.keys(provinces).forEach(key => {
+    const prov = provinces[key];
+    const values = {
+      name: prov.name,
+      food: Math.round(prov.food),
+      foodCap: prov.foodCap,
+      gold: Math.round(prov.gold),
+      troops: Math.round(prov.troops),
+      workers: Math.round(prov.workers),
+      morale: Math.round(prov.morale),
+      buildings: prov.buildings.length > 0 ? prov.buildings.join(', ') : '—',
+      cardClass: key === 'player' ? 'player-card' : 'ai-card'
+    };
+    if (window.EltheonJS && window.EltheonJS.templating) {
+      const el = window.EltheonJS.templatingExt.render('province-card', values);
       if (key === 'player') {
-        card.classList.add('player-card');
+        playerContainer.appendChild(el.element);
       } else {
-        card.classList.add('ai-card');
+        aiContainer.appendChild(el.element);
       }
+    } else {
+      // Fallback ohne Templating, falls EltheonJS nicht verfügbar ist
+      const card = document.createElement('div');
+      card.className = `province-card card p-3 mb-3 ${values.cardClass}`;
       card.innerHTML = `
-        <h2 class="card-title">${prov.name}</h2>
+        <h2 class="card-title">${values.name}</h2>
         <ul class="list-unstyled mb-0">
-          <li>Nahrung: <strong>${Math.round(prov.food)}</strong> / ${prov.foodCap}</li>
-          <li>Gold: <strong>${Math.round(prov.gold)}</strong></li>
-          <li>Truppen: <strong>${Math.round(prov.troops)}</strong></li>
-          <li>Arbeiter: <strong>${Math.round(prov.workers)}</strong></li>
-          <li>Moral: <strong>${Math.round(prov.morale)}</strong></li>
-          <li>Gebäude: ${prov.buildings.length > 0 ? prov.buildings.join(', ') : '—'}</li>
+          <li>Nahrung: <strong>${values.food}</strong> / ${values.foodCap}</li>
+          <li>Gold: <strong>${values.gold}</strong></li>
+          <li>Truppen: <strong>${values.troops}</strong></li>
+          <li>Arbeiter: <strong>${values.workers}</strong></li>
+          <li>Moral: <strong>${values.morale}</strong></li>
+          <li>Gebäude: ${values.buildings}</li>
         </ul>
       `;
       if (key === 'player') {
@@ -309,7 +323,8 @@ function updateUI() {
       } else {
         aiContainer.appendChild(card);
       }
-    });
+    }
+  });
 }
 
 function showEvent() {
@@ -324,23 +339,45 @@ function showEvent() {
   const randomIndex = Math.floor(Math.random() * eventPool.length);
   currentEvent = eventPool[randomIndex];
   const descEl = document.getElementById('event-description');
-  descEl.textContent = currentEvent.description;
+  descEl.innerHTML = '';
+  if (window.EltheonJS && window.EltheonJS.templatingExt) {
+    const descTpl = window.EltheonJS.templatingExt.render('event-description', { description: currentEvent.description });
+    descEl.appendChild(descTpl.element);
+  } else {
+    const p = document.createElement('p');
+    p.textContent = currentEvent.description;
+    descEl.appendChild(p);
+  }
   const optionsEl = document.getElementById('event-options');
   optionsEl.innerHTML = '';
-  currentEvent.options.forEach((opt, idx) => {
-    const btn = document.createElement('button');
-    btn.classList.add('btn', 'btn-primary', 'mb-2');
-    btn.textContent = opt.label;
-    btn.addEventListener('click', () => {
-      // Effekt ausführen
-      opt.effect();
-      // Panel ausblenden
-      panel.classList.add('hidden');
-      // Monatliche Abrechnung
-      nextMonth();
+  // Render Optionen via EltheonJS templating
+  const optionsModel = currentEvent.options.map((o) => ({ label: o.label }));
+  if (window.EltheonJS && window.EltheonJS.templatingExt) {
+    const tpl = window.EltheonJS.templatingExt.render('event-options', { options: optionsModel }, {
+      chooseEventOption: (_e, el) => {
+        const label = el.getValue();
+        const opt = currentEvent && currentEvent.options.find(o => o.label === label);
+        if (!opt) return;
+        opt.effect();
+        panel.classList.add('hidden');
+        nextMonth();
+      }
     });
-    optionsEl.appendChild(btn);
-  });
+    optionsEl.appendChild(tpl.element);
+  } else {
+    // Fallback
+    currentEvent.options.forEach((opt) => {
+      const btn = document.createElement('button');
+      btn.classList.add('btn', 'btn-primary', 'mb-2');
+      btn.textContent = opt.label;
+      btn.addEventListener('click', () => {
+        opt.effect();
+        panel.classList.add('hidden');
+        nextMonth();
+      });
+      optionsEl.appendChild(btn);
+    });
+  }
 }
 
 function showBuildOptions() {
@@ -434,32 +471,61 @@ function showBuildOptions() {
       }
     }
   ];
-  buildings.forEach(bld => {
-    const btn = document.createElement('button');
-    btn.classList.add('btn', 'btn-secondary', 'mb-2');
-    btn.innerHTML = `${bld.name} – ${bld.description} (Kosten: ${bld.cost.gold} Gold, ${bld.requiredWorkers} Arbeiter)`;
+  const buildModels = buildings.map((bld) => {
     const canAfford = player.gold >= bld.cost.gold && player.food >= (bld.cost.food || 0);
-    if (!bld.available() || !canAfford) {
-      btn.disabled = true;
-    }
-    btn.addEventListener('click', () => {
-      if (bld.available() && player.gold >= bld.cost.gold && player.food >= (bld.cost.food || 0) && !buildingUsed) {
-        bld.action();
-        // Arbeiter für diesen Monat in Anspruch nehmen
-        workersUsedThisMonth += bld.requiredWorkers;
-        buildingUsed = true;
-        updateUI();
-        // Panel text anpassen
-        const info = document.getElementById('build-info');
-        info.textContent = 'Du hast diesen Monat bereits gebaut.';
-        // Disable all build buttons
-        Array.from(buildContainer.children).forEach(el => {
-          el.disabled = true;
-        });
+    const enabled = bld.available() && canAfford && !buildingUsed;
+    return {
+      label: `${bld.name} – ${bld.description} (Kosten: ${bld.cost.gold}\u00A0Gold, ${bld.requiredWorkers}\u00A0Arbeiter)`,
+      enabled
+    };
+  });
+  if (window.EltheonJS && window.EltheonJS.templatingExt) {
+    const tpl = window.EltheonJS.templatingExt.render('build-options', { options: buildModels }, {
+      selectBuild: (_e, el) => {
+        const label = el.getValue();
+        const bld = buildings.find(b => `${b.name} – ${b.description} (Kosten: ${b.cost.gold}\u00A0Gold, ${b.requiredWorkers}\u00A0Arbeiter)` === label);
+        if (!bld) return;
+        const canAfford = player.gold >= bld.cost.gold && player.food >= (bld.cost.food || 0);
+        if (bld.available() && canAfford && !buildingUsed) {
+          bld.action();
+          workersUsedThisMonth += bld.requiredWorkers;
+          buildingUsed = true;
+          updateUI();
+          document.getElementById('build-info').textContent = 'Du hast diesen Monat bereits gebaut.';
+          showBuildOptions();
+        }
       }
     });
-    buildContainer.appendChild(btn);
-  });
+    Array.from(tpl.element.querySelectorAll('button')).forEach(btn => {
+      const lbl = btn.textContent || '';
+      const m = buildModels.find(x => x.label === lbl);
+      if (m && !m.enabled) btn.disabled = true;
+    });
+    buildContainer.appendChild(tpl.element);
+  } else {
+    // Fallback
+    buildings.forEach((bld, idx) => {
+      const btn = document.createElement('button');
+      btn.classList.add('btn', 'btn-secondary', 'mb-2');
+      btn.innerHTML = `${bld.name} – ${bld.description} (Kosten: ${bld.cost.gold}\u00A0Gold, ${bld.requiredWorkers}\u00A0Arbeiter)`;
+      const canAfford = player.gold >= bld.cost.gold && player.food >= (bld.cost.food || 0);
+      if (!bld.available() || !canAfford || buildingUsed) {
+        btn.disabled = true;
+      }
+      btn.addEventListener('click', () => {
+        if (bld.available() && player.gold >= bld.cost.gold && player.food >= (bld.cost.food || 0) && !buildingUsed) {
+          bld.action();
+          workersUsedThisMonth += bld.requiredWorkers;
+          buildingUsed = true;
+          updateUI();
+          const info = document.getElementById('build-info');
+          info.textContent = 'Du hast diesen Monat bereits gebaut.';
+          showBuildOptions();
+        }
+      });
+      buildContainer.appendChild(btn);
+    });
+  }
 }
 
 // Rekrutierungsoptionen anzeigen
@@ -485,29 +551,46 @@ function showRecruitOptions() {
       gainWorkers: 50
     }
   ];
-  actions.forEach(act => {
-    const btn = document.createElement('button');
-    btn.classList.add('btn', 'btn-secondary', 'mb-2');
-    btn.textContent = act.label;
-    if (player.gold < act.cost) {
-      btn.disabled = true;
-    }
-    btn.addEventListener('click', () => {
-      if (player.gold >= act.cost) {
-        player.gold -= act.cost;
-        if (act.gainTroops) {
-          player.troops += act.gainTroops;
+  const models = actions.map((a) => ({ label: a.label, enabled: player.gold >= a.cost }));
+  if (window.EltheonJS && window.EltheonJS.templatingExt) {
+    const tpl = window.EltheonJS.templatingExt.render('recruit-options', { options: models }, {
+      selectRecruit: (_e, el) => {
+        const label = el.getValue();
+        const act = actions.find(a => a.label === label);
+        if (!act) return;
+        if (player.gold >= act.cost) {
+          player.gold -= act.cost;
+          if (act.gainTroops) player.troops += act.gainTroops;
+          if (act.gainWorkers) player.workers += act.gainWorkers;
+          updateUI();
+          showRecruitOptions();
         }
-        if (act.gainWorkers) {
-          player.workers += act.gainWorkers;
-        }
-        updateUI();
-        // Buttons neu bewerten nach Rekrutierung
-        showRecruitOptions();
       }
     });
-    recruitContainer.appendChild(btn);
-  });
+    Array.from(tpl.element.querySelectorAll('button')).forEach(btn => {
+      const lbl = btn.textContent || '';
+      const m = models.find(x => x.label === lbl);
+      if (m && !m.enabled) btn.disabled = true;
+    });
+    recruitContainer.appendChild(tpl.element);
+  } else {
+    actions.forEach((act) => {
+      const btn = document.createElement('button');
+      btn.classList.add('btn', 'btn-secondary', 'mb-2');
+      btn.textContent = act.label;
+      if (player.gold < act.cost) btn.disabled = true;
+      btn.addEventListener('click', () => {
+        if (player.gold >= act.cost) {
+          player.gold -= act.cost;
+          if (act.gainTroops) player.troops += act.gainTroops;
+          if (act.gainWorkers) player.workers += act.gainWorkers;
+          updateUI();
+          showRecruitOptions();
+        }
+      });
+      recruitContainer.appendChild(btn);
+    });
+  }
 }
 
 function nextMonth() {
@@ -639,52 +722,50 @@ function endGame() {
   descEl.textContent = 'Die zwei Jahre sind vorüber!';
   const optionsEl = document.getElementById('event-options');
   optionsEl.innerHTML = '';
-  // Ergebnistext erstellen
-  let scoreboard = '';
+  // Ergebnisdaten berechnen
   let totalScore = 0;
   const results = [];
   Object.keys(provinces).forEach(key => {
     const prov = provinces[key];
-    // Basis: Truppen, Moral, Nahrung
     let score = prov.troops * 1 + prov.morale * 2 + prov.food * 0.5;
-    // Fort bringt starken Bonus
-    if (prov.hasFort) {
-      score += 150;
-    }
-    // Tempel tragen durch Zusammenhalt bei
-    if (prov.temples && prov.temples > 0) {
-      score += prov.temples * 20;
-    }
-    // Markt minimaler Bonus
-    if (prov.hasMarket) {
-      score += 10;
-    }
-    // Runde ab
+    if (prov.hasFort) score += 150;
+    if (prov.temples && prov.temples > 0) score += prov.temples * 20;
+    if (prov.hasMarket) score += 10;
     const rounded = Math.round(score);
     totalScore += rounded;
     results.push({ name: prov.name, score: rounded });
   });
-  // Erstelle Scoreboard-Text
-  scoreboard += 'Endbilanz – WarScore aller Provinzen:\n';
-  results.forEach(res => {
-    scoreboard += `${res.name}: ${res.score}\n`;
-  });
-  scoreboard += `Gesamt-Score: ${totalScore}\n`;
-  // Bewertung des Gesamtergebnisses
+  let rating = '';
   if (totalScore > 2500) {
-    scoreboard += 'Großartig! Euer Reich ist stark genug für den finalen Kampf.';
+    rating = 'Großartig! Euer Reich ist stark genug für den finalen Kampf.';
   } else if (totalScore > 1500) {
-    scoreboard += 'Nicht schlecht. Mit etwas Geschick könntet ihr bestehen.';
+    rating = 'Nicht schlecht. Mit etwas Geschick könntet ihr bestehen.';
   } else {
-    scoreboard += 'Das Reich ist schwach und könnte der bevorstehenden Invasion nicht standhalten.';
+    rating = 'Das Reich ist schwach und könnte der bevorstehenden Invasion nicht standhalten.';
   }
-  const summaryP = document.createElement('p');
-  summaryP.textContent = scoreboard;
-  optionsEl.appendChild(summaryP);
+  if (window.EltheonJS && window.EltheonJS.templatingExt) {
+    const tpl = window.EltheonJS.templatingExt.render('end-summary', {
+      results,
+      totalScore,
+      rating
+    });
+    optionsEl.appendChild(tpl.element);
+  } else {
+    // Fallback auf Text
+    let scoreboard = 'Endbilanz – WarScore aller Provinzen:\n';
+    results.forEach(res => { scoreboard += `${res.name}: ${res.score}\n`; });
+    scoreboard += `Gesamt-Score: ${totalScore}\n` + rating;
+    const summaryP = document.createElement('p');
+    summaryP.textContent = scoreboard;
+    optionsEl.appendChild(summaryP);
+  }
 }
 
 // Initialisierung
 window.addEventListener('DOMContentLoaded', () => {
+  if (window.EltheonJS && window.EltheonJS.templatingExt) {
+    try { window.EltheonJS.templatingExt.init(); } catch (_) {}
+  }
   updateUI();
   showBuildOptions();
   // Erste Ereignisanzeige zum Start
