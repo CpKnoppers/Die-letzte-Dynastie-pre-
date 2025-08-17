@@ -50,14 +50,34 @@
     - `bash scripts/sync-to-host.sh /custom/target --clean`
 
 ## Project Recap
-- Current refactor: moved UI rendering to EltheonJS templating.
-  - Province cards, event options, build/recruit options, end summary use templates.
-  - Use `EltheonJS.templatingExt.init()` once on DOM ready; render via `templatingExt.render(...)`.
-  - For `data-tpl-foreach`, place it on a child element inside a wrapper, not on the template root.
-  - Disable states for buttons are applied after render (no `disabled="{{...}}"` in templates).
-- State: not used yet; ignore `EltheonJS.state` for now.
-- Sync: use `npm run sync:host` to mirror files to the Windows path.
-- Testing: manual playtest — verify monthly tick, events, build/recruit, and end screen; no console errors.
-- Next candidates:
-  - Consolidate options rendering to a generic `options-list` template + helper.
-  - Optional: template wrappers for panels and event headers; later consider integrating `bind`/`state`.
+- Rebrand: project name is “Die letzte Dynastie”.
+
+### Gameplay Loop
+- Loop runs via `EltheonJS.scheduler.every('gameTick', 1000, ...)`.
+- Start date: 01.04.0925 (`new Date(925, 3, 1)`).
+- Day ticks every second; at day=1: process month (`nextMonth(true)`).
+- Events: shown at month start without pausing the loop (Option A).
+- Auto-resolve: if an event is still open at month rollover, the worst option is auto-selected (heuristic on label).
+- End: when `month > 24`, end screen is shown and the scheduler is stopped.
+
+### UI & Templates
+- EltheonJS templating is used throughout; call `EltheonJS.templatingExt.init()` on DOM ready.
+- Generic options template `options-list` renders event/build/recruit options with icons in labels.
+- Province cards redesigned:
+  - Stats grid with icons; food capacity meter; morale meter with color thresholds.
+  - Production hints: food (net), gold (net), morale delta with tooltips showing breakdowns.
+  - Badges for buildings (Markt, Kaserne, Fort, Tempel ×N).
+  - Header shows role pill (Spieler/Vasall), AI emblem, and optional crest image (`crestImg`) or fallback initial (`crestText`).
+- Icons: PNGs masked via CSS (`.icon` uses `mask-image` + `currentColor`) so they inherit text color.
+  - Small variants live under `assets/img/icons/small/` (48x48).
+
+### State & Testing
+- Global state module is not used yet; ignore `EltheonJS.state` for now.
+- Manual playtest: verify loop ticks, auto-resolve at month change, build/recruit actions, and end screen.
+
+### Sync
+- Use `npm run sync:host` to mirror files to Windows path for local review.
+
+### Notes for Contributors
+- When adding new option labels, keep resource words (Nahrung/Gold/Moral/Truppen/Arbeiter) so the iconizer can detect and decorate them.
+- For new provinces, you can set `crestImg` (prefer square SVG/PNG ~26–64px) or rely on `crestText` fallback.
