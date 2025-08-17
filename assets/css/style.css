@@ -190,6 +190,10 @@ main {
 .stat .meter.morale .bar.med { background: #d9a321; }
 .stat .meter.morale .bar.low { background: #b44; }
 .stat .hint { font-size: 0.85rem; color: rgba(90,62,24,0.9); margin-top: 2px; }
+@media (max-width: 768px) {
+  .stats-grid { gap: 8px 10px; }
+  .stat .hint { font-size: 0.8rem; }
+}
 
 /* Per-card icon tinting */
 .player-card .icon { color: #835c32; }

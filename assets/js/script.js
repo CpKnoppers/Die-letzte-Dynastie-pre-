@@ -359,8 +359,14 @@ function updateUI() {
     const prodF = Math.round(prov.baseF * fHarvest);
     const taxG = Math.round(prov.baseG * fTax + (prov.hasMarket ? 10 : 0));
     // Vereinfachte Netto-Vorhersagen (Unterhalt vs. Produktion)
-    const upFNow = Math.ceil(prov.troops / 100) * 6 + Math.ceil(prov.workers / 100) * 4;
-    const upGNow = Math.ceil(prov.troops / 100) * 8 + Math.ceil(prov.workers / 100) * 6;
+    const troopUnits = Math.ceil(prov.troops / 100);
+    const workerUnits = Math.ceil(prov.workers / 100);
+    const troopUpF = troopUnits * 6;
+    const troopUpG = troopUnits * 8;
+    const workerUpF = workerUnits * 4;
+    const workerUpG = workerUnits * 6;
+    const upFNow = troopUpF + workerUpF;
+    const upGNow = troopUpG + workerUpG;
     const foodNet = prodF - upFNow;
     const goldNet = taxG - upGNow;
     const willFoodDeficit = (prov.food - upFNow) < 0;
@@ -375,11 +381,11 @@ function updateUI() {
       foodPct: Math.max(0, Math.min(100, Math.round((prov.food / Math.max(1, prov.foodCap)) * 100))),
       foodProd: prodF,
       foodNet: foodNet,
-      foodHint: `Produktion: +${prodF} · Unterhalt: -${upFNow}`,
+      foodHint: `Produktion: +${prodF} · Unterhalt: -${upFNow} (Truppen -${troopUpF}, Arbeiter -${workerUpF})`,
       gold: Math.round(prov.gold),
       goldProd: taxG,
       goldNet: goldNet,
-      goldHint: `Steuern: +${taxG} · Unterhalt: -${upGNow}`,
+      goldHint: `Steuern: +${taxG} · Unterhalt: -${upGNow} (Truppen -${troopUpG}, Arbeiter -${workerUpG})`,
       troops: Math.round(prov.troops),
       workers: Math.round(prov.workers),
       morale: Math.round(prov.morale),
