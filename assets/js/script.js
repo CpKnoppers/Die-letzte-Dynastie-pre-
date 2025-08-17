@@ -57,8 +57,14 @@ const provinces = {
   }
 };
 
-let month = 1;
-const maxMonths = 24;
+// EltheonJS-Module
+const { templatingExt, bind, storage } = EltheonJS;
+
+// Globaler Spielzustand
+let game = {
+  month: 1,
+  maxMonths: 24
+};
 let currentEvent = null;
 let buildingUsed = false;
 
@@ -274,71 +280,52 @@ eventPool.push({
 });
 
 // Hilfsfunktionen
-function updateUI() {
-  // Monat aktualisieren
-  const monthCounter = document.getElementById('month-counter');
-  monthCounter.textContent = `Monat ${month} / ${maxMonths}`;
-  // Provinzen ausgeben – separate Container für Spieler und Vasallen
+function renderProvinces() {
   const playerContainer = document.getElementById('player-province');
   const aiContainer = document.getElementById('ai-provinces');
   playerContainer.innerHTML = '';
   aiContainer.innerHTML = '';
   Object.keys(provinces).forEach(key => {
     const prov = provinces[key];
-    const card = document.createElement('div');
-    card.className = 'province-card';
-    // Unterscheide Spieler- und Vasallen-Karten über Klassen für Styling
+    const card = templatingExt.render('province-card', {
+      ...prov,
+      typeClass: key === 'player' ? 'player-card' : 'ai-card',
+      food: Math.round(prov.food),
+      gold: Math.round(prov.gold),
+      troops: Math.round(prov.troops),
+      workers: Math.round(prov.workers),
+      morale: Math.round(prov.morale),
+      buildingList: prov.buildings.length > 0 ? prov.buildings.join(', ') : '—'
+    });
     if (key === 'player') {
-      card.classList.add('player-card');
+      playerContainer.appendChild(card.element);
     } else {
-      card.classList.add('ai-card');
-    }
-    card.innerHTML = `
-      <h2>${prov.name}</h2>
-      <ul>
-        <li>Nahrung: <strong>${Math.round(prov.food)}</strong> / ${prov.foodCap}</li>
-        <li>Gold: <strong>${Math.round(prov.gold)}</strong></li>
-        <li>Truppen: <strong>${Math.round(prov.troops)}</strong></li>
-        <li>Arbeiter: <strong>${Math.round(prov.workers)}</strong></li>
-        <li>Moral: <strong>${Math.round(prov.morale)}</strong></li>
-        <li>Gebäude: ${prov.buildings.length > 0 ? prov.buildings.join(', ') : '—'}</li>
-      </ul>
-    `;
-    if (key === 'player') {
-      playerContainer.appendChild(card);
-    } else {
-      aiContainer.appendChild(card);
+      aiContainer.appendChild(card.element);
     }
   });
 }
 
 function showEvent() {
   buildingUsed = false;
-  // Arbeiter für Bauten zurücksetzen (neuer Monat)
   workersUsedThisMonth = 0;
   showBuildOptions();
   showRecruitOptions();
   const panel = document.getElementById('event-panel');
   panel.classList.remove('hidden');
-  // Zufälliges Ereignis wählen
   const randomIndex = Math.floor(Math.random() * eventPool.length);
   currentEvent = eventPool[randomIndex];
-  const descEl = document.getElementById('event-description');
-  descEl.textContent = currentEvent.description;
+  document.getElementById('event-description').textContent = currentEvent.description;
   const optionsEl = document.getElementById('event-options');
   optionsEl.innerHTML = '';
-  currentEvent.options.forEach((opt, idx) => {
-    const btn = document.createElement('button');
-    btn.textContent = opt.label;
-    btn.addEventListener('click', () => {
-      // Effekt ausführen
-      opt.effect();
-      // Panel ausblenden
-      panel.classList.add('hidden');
-      // Monatliche Abrechnung
-      nextMonth();
+  currentEvent.options.forEach(opt => {
+    const btn = templatingExt.render('event-option', opt, {
+      select: () => {
+        opt.effect();
+        panel.classList.add('hidden');
+        nextMonth();
+      }
     });
-    optionsEl.appendChild(btn);
+    optionsEl.appendChild(btn.element);
   });
 }
 
@@ -435,6 +422,7 @@ function showBuildOptions() {
   ];
   buildings.forEach(bld => {
     const btn = document.createElement('button');
+    btn.classList.add('btn', 'btn-secondary', 'mb-2');
     btn.innerHTML = `${bld.name} – ${bld.description} (Kosten: ${bld.cost.gold} Gold, ${bld.requiredWorkers} Arbeiter)`;
     const canAfford = player.gold >= bld.cost.gold && player.food >= (bld.cost.food || 0);
     if (!bld.available() || !canAfford) {
@@ -446,7 +434,7 @@ function showBuildOptions() {
         // Arbeiter für diesen Monat in Anspruch nehmen
         workersUsedThisMonth += bld.requiredWorkers;
         buildingUsed = true;
-        updateUI();
+        renderProvinces();
         // Panel text anpassen
         const info = document.getElementById('build-info');
         info.textContent = 'Du hast diesen Monat bereits gebaut.';
@@ -485,6 +473,7 @@ function showRecruitOptions() {
   ];
   actions.forEach(act => {
     const btn = document.createElement('button');
+    btn.classList.add('btn', 'btn-secondary', 'mb-2');
     btn.textContent = act.label;
     if (player.gold < act.cost) {
       btn.disabled = true;
@@ -498,7 +487,7 @@ function showRecruitOptions() {
         if (act.gainWorkers) {
           player.workers += act.gainWorkers;
         }
-        updateUI();
+        renderProvinces();
         // Buttons neu bewerten nach Rekrutierung
         showRecruitOptions();
       }
@@ -560,13 +549,14 @@ function nextMonth() {
   aiActions(provinces.ai1);
   aiActions(provinces.ai2);
   // Monat voranschreiten
-  month++;
+  game.month++;
   // Spielende prüfen
-  if (month > maxMonths) {
+  if (game.month > game.maxMonths) {
     endGame();
     return;
   }
-  updateUI();
+  renderProvinces();
+  storage.local.set('cc-save', { month: game.month, provinces });
   showEvent();
 }
 
@@ -596,7 +586,7 @@ function aiActions(prov) {
       prov.temples = (prov.temples || 0) + 1;
       prov.buildings.push('Tempel');
     // 5. Fort bauen, wenn Spiel fortgeschritten oder Truppen ausreichend und genug Gold
-    } else if (!prov.hasFort && prov.gold >= 160 && (month > maxMonths / 2 || prov.troops > 200)) {
+    } else if (!prov.hasFort && prov.gold >= 160 && (game.month > game.maxMonths / 2 || prov.troops > 200)) {
       prov.gold -= 160;
       prov.hasFort = true;
       prov.buildings.push('Fort');
@@ -613,7 +603,7 @@ function aiActions(prov) {
     prov.morale += 5;
   }
   // Rekrutierungen: Wenn Truppen unter einem Schwellenwert liegen und genug Gold vorhanden
-  const troopThreshold = 150 + Math.max(0, month - 6) * 2; // steigt im Verlauf leicht an
+  const troopThreshold = 150 + Math.max(0, game.month - 6) * 2; // steigt im Verlauf leicht an
   if (prov.troops < troopThreshold && prov.gold >= 10) {
     // Berechne Truppenstärke je nach Kaserne
     const gain = prov.hasBarracks ? 15 : 10;
@@ -629,7 +619,7 @@ function aiActions(prov) {
 
 function endGame() {
   // Ergebnis anzeigen
-  updateUI();
+  renderProvinces();
   const panel = document.getElementById('event-panel');
   panel.classList.remove('hidden');
   const descEl = document.getElementById('event-description');
@@ -681,8 +671,21 @@ function endGame() {
 }
 
 // Initialisierung
-window.addEventListener('DOMContentLoaded', () => {
-  updateUI();
+window.addEventListener('DOMContentLoaded', async () => {
+  templatingExt.init();
+  const saved = await storage.local.get('cc-save');
+  if (saved) {
+    game.month = saved.month || 1;
+    if (saved.provinces) {
+      Object.keys(saved.provinces).forEach(k => {
+        if (provinces[k]) {
+          Object.assign(provinces[k], saved.provinces[k]);
+        }
+      });
+    }
+  }
+  game = bind.applyBindings(game, '#game-container');
+  renderProvinces();
   showBuildOptions();
   // Erste Ereignisanzeige zum Start
   showEvent();
