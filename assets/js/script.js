@@ -19,7 +19,8 @@ const provinces = {
     hasBarracks: false,
     temples: 0,
     hasFort: false,
-    workers: 50
+    workers: 50,
+    crestImg: 'assets/img/crests/player.svg'
   },
   ai1: {
     name: 'Vasall 1',
@@ -36,7 +37,8 @@ const provinces = {
     hasBarracks: false,
     temples: 0,
     hasFort: false,
-    workers: 0
+    workers: 0,
+    crestImg: 'assets/img/crests/ai1.svg'
   },
   ai2: {
     name: 'Vasall 2',
@@ -53,7 +55,8 @@ const provinces = {
     hasBarracks: false,
     temples: 0,
     hasFort: false,
-    workers: 0
+    workers: 0,
+    crestImg: 'assets/img/crests/ai2.svg'
   }
 };
 
@@ -372,8 +375,11 @@ function updateUI() {
     const willFoodDeficit = (prov.food - upFNow) < 0;
     const willGoldDeficit = (prov.gold - upGNow) < 0;
     const moraleDelta = (prov.temples ? 3 * prov.temples : 0) - (willFoodDeficit ? 5 : 0) - (willGoldDeficit ? 5 : 0);
-    const crestText = (prov.name && typeof prov.name === 'string' ? prov.name.trim().charAt(0).toUpperCase() : '');
+    const crestText = (!prov.crestImg && prov.name && typeof prov.name === 'string' ? prov.name.trim().charAt(0).toUpperCase() : '');
     const crestTitle = prov.name ? `Wappen – ${prov.name}` : 'Wappen';
+    const projectedFood = prov.food + Math.max(0, foodNet);
+    const capOverflow = Math.max(0, Math.round(projectedFood - prov.foodCap));
+    const capNote = capOverflow > 0 ? `Cap-Limit: -${capOverflow}` : (projectedFood >= Math.round(prov.foodCap * 0.9) ? 'Nahe Cap' : '');
     const values = {
       name: prov.name,
       food: Math.round(prov.food),
@@ -381,7 +387,8 @@ function updateUI() {
       foodPct: Math.max(0, Math.min(100, Math.round((prov.food / Math.max(1, prov.foodCap)) * 100))),
       foodProd: prodF,
       foodNet: foodNet,
-      foodHint: `Produktion: +${prodF} · Unterhalt: -${upFNow} (Truppen -${troopUpF}, Arbeiter -${workerUpF})`,
+      foodHint: `Produktion: +${prodF} · Unterhalt: -${upFNow} (Truppen -${troopUpF}, Arbeiter -${workerUpF})${capNote ? ' · ' + capNote : ''}`,
+      capNote: capNote,
       gold: Math.round(prov.gold),
       goldProd: taxG,
       goldNet: goldNet,
@@ -396,6 +403,7 @@ function updateUI() {
       role: (key === 'player' ? 'Spieler' : (key === 'ai1' ? 'Vasall 1' : (key === 'ai2' ? 'Vasall 2' : ''))),
       isAI: (key !== 'player'),
       crestText: crestText,
+      crestImg: prov.crestImg || '',
       crestTitle: crestTitle,
       // Badge-Liste aus Gebäude-Status ableiten
       badges: (function() {
