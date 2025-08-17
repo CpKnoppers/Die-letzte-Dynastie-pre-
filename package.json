@@ -1,0 +1,13 @@
+{
+  "name": "die-letzte-dynastie-prototype",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Static prototype for Crown & Crisis with Jest test scaffold",
+  "scripts": {
+    "test": "jest"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}
+
