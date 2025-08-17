@@ -3,7 +3,7 @@ body {
   margin: 0;
   font-family: Arial, sans-serif;
   background-color: #f4efe8;
-  background-image: url('parchment.png');
+  background-image: url('../img/parchment.png');
   background-size: cover;
   background-repeat: no-repeat;
   background-attachment: fixed;
@@ -11,16 +11,13 @@ body {
 }
 
 #game-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
   background: rgba(255, 255, 255, 0.8);
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  padding: 20px;
 }
 
 header {
-  text-align: center;
   margin-bottom: 20px;
 }
 /* Titelbild-Style */
@@ -59,10 +56,6 @@ main {
 
 .province-card {
   flex: 1 1 280px;
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 8px;
-  padding: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   min-width: 250px;
 }
 
@@ -107,29 +100,7 @@ main {
 }
 
 .options {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
   margin-top: 10px;
-}
-
-.options button {
-  padding: 8px 12px;
-  font-size: 0.95rem;
-  border: none;
-  border-radius: 4px;
-  background-color: #835c32;
-  color: #fff;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-.options button:hover {
-  background-color: #a67442;
-}
-.options button:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
-  color: #666;
 }
 
 footer {
