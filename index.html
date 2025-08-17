@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crown &amp; Crisis – Prototyp</title>
+  <!-- Verknüpfte CSS-Datei -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="game-container">
+    <header>
+      <!-- Titelbild -->
+      <img id="title-image" src="header.png" alt="Titelbild" />
+      <h1>Crown &amp; Crisis</h1>
+      <p id="month-counter">Monat 1 / 24</p>
+    </header>
+    <main>
+      <!-- Spielbereich: getrennt nach Spieler- und Vasallen-Provinzen -->
+      <section id="player-province" class="provinces">
+        <!-- Die Provinzkarte des Spielers wird dynamisch eingefügt -->
+      </section>
+      <section id="event-panel" class="panel hidden">
+        <h2>Ereignis</h2>
+        <p id="event-description">Ein Ereignis tritt ein…</p>
+        <div id="event-options" class="options"></div>
+      </section>
+      <section id="build-panel" class="panel">
+        <h2>Bauten &amp; Rekrutierungen</h2>
+        <p id="build-info">Du kannst einmal pro Monat ein Gebäude errichten (erfordert Bautrupps und Ressourcen).</p>
+        <div id="build-options" class="options"></div>
+        <h3>Rekrutierungen</h3>
+        <p id="recruit-info">Rekrutiere Truppen oder Bautrupps (benötigt Gold).</p>
+        <div id="recruit-options" class="options"></div>
+      </section>
+      <section id="ai-provinces" class="provinces">
+        <!-- Die Vasallen-Provinzen werden dynamisch eingefügt -->
+      </section>
+    </main>
+    <footer>
+      <small>Prototyp – entwickelt als Konzeptdemo</small>
+    </footer>
+  </div>
+
+  <!-- Spiel-Logik -->
+  <script src="script.js"></script>
+</body>
+</html>
