@@ -96,6 +96,11 @@ function resumeLoop() {
   if (it && it.resume) it.resume();
 }
 
+function stopLoop() {
+  const sch = window.EltheonJS && window.EltheonJS.scheduler;
+  if (sch && sch.stop) sch.stop(TICK_KEY);
+}
+
 function startLoop() {
   const sch = window.EltheonJS && window.EltheonJS.scheduler;
   if (!sch || !sch.every) return;
@@ -105,6 +110,8 @@ function startLoop() {
     updateDateUI();
     // Bei Monatswechsel Produktion anwenden und neues Ereignis öffnen
     if (currentDate.getDate() === 1) {
+      // Offenes Ereignis automatisch mit schlechtester Option auflösen
+      autoResolvePendingEvent();
       // Monatsschluss auswerten und neuen Monat beginnen
       nextMonth(true);
     }
@@ -406,8 +413,8 @@ function showEvent() {
         if (!opt) return;
         opt.effect();
         panel.classList.add('hidden');
-        // Ereignis gewählt – Spielloop fortsetzen
-        resumeLoop();
+        // Ereignis gewählt – Loop läuft ohnehin weiter
+        currentEvent = null;
       }
     });
     optionsEl.appendChild(tpl.element);
@@ -420,7 +427,7 @@ function showEvent() {
       btn.addEventListener('click', () => {
         opt.effect();
         panel.classList.add('hidden');
-        resumeLoop();
+        currentEvent = null;
       });
       optionsEl.appendChild(btn);
     });
@@ -697,14 +704,12 @@ function nextMonth(autoShowEvent = true) {
   // Spielende prüfen
   if (month > maxMonths) {
     endGame();
-    pauseLoop();
     return;
   }
   updateUI();
   if (autoShowEvent) {
-    // Neues Ereignis zu Monatsbeginn; Loop pausieren bis Auswahl
+    // Neues Ereignis zu Monatsbeginn; Loop bleibt aktiv
     showEvent();
-    pauseLoop();
   }
 }
 
@@ -768,6 +773,8 @@ function aiActions(prov) {
 function endGame() {
   // Ergebnis anzeigen
   updateUI();
+  // Timer/Loop anhalten
+  stopLoop();
   const panel = document.getElementById('event-panel');
   panel.classList.remove('hidden');
   const descEl = document.getElementById('event-description');
@@ -820,8 +827,52 @@ window.addEventListener('DOMContentLoaded', () => {
   }
   updateUI();
   showBuildOptions();
-  // Loop starten und direkt zum Monatsbeginn pausieren mit Ereignis
+  // Loop starten und initiales Ereignis anzeigen (ohne Pause, Option A)
   startLoop();
   showEvent();
-  pauseLoop();
 });
+
+// Automatische Auflösung eines offenen Ereignisses mit der schlechtesten Option
+function autoResolvePendingEvent() {
+  const panel = document.getElementById('event-panel');
+  const isVisible = panel && !panel.classList.contains('hidden');
+  if (!currentEvent || !isVisible) return;
+  let worst = null;
+  let worstScore = Infinity;
+  (currentEvent.options || []).forEach((opt) => {
+    const s = scoreOptionLabel(opt.label || '');
+    if (s < worstScore) { worstScore = s; worst = opt; }
+  });
+  if (worst && typeof worst.effect === 'function') {
+    try { worst.effect(); } catch (_) {}
+  }
+  panel.classList.add('hidden');
+  currentEvent = null;
+}
+
+// Bewertet ein Options-Label grob nach Auswirkung (kleiner = schlechter)
+function scoreOptionLabel(label) {
+  if (!label || typeof label !== 'string') return 0;
+  const text = label;
+  let score = 0;
+  // Erlaube verschiedenartige Minuszeichen
+  const minusClass = "[\\-\u2010-\u2015\u2212\u2011\u2013]";
+  const plusRe = /\+(\d+)\s*(Nahrung|Gold|Moral|Truppen|Arbeiter)/gi;
+  const minusRe = new RegExp(minusClass + '(?:\u00A0)?(\\d+)\\s*(Nahrung|Gold|Moral|Truppen|Arbeiter)', 'gi');
+  const weight = (unit) => ({ Nahrung: 1, Gold: 0.5, Moral: 2, Truppen: 1, Arbeiter: 0.5 })[unit] || 1;
+  let m;
+  while ((m = plusRe.exec(text)) !== null) {
+    const val = parseInt(m[1], 10) || 0;
+    const unit = m[2];
+    score += val * weight(unit);
+  }
+  while ((m = minusRe.exec(text)) !== null) {
+    const val = parseInt(m[1], 10) || 0;
+    const unit = m[2];
+    score -= val * weight(unit);
+  }
+  if (/Ignorieren|Nichts tun|vertuschen|kein handel/i.test(text)) {
+    score -= 5;
+  }
+  return score;
+}
