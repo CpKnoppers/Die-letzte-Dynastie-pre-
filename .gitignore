@@ -1,0 +1,11 @@
+# Node
+node_modules/
+npm-debug.log*
+package-lock.json# lockfile is committed; this rule is a no-op but documents intent
+
+# Coverage / test artifacts
+coverage/
+
+# OS
+.DS_Store
+
