@@ -5,6 +5,9 @@
 - Assets: `assets/`
   - Styles: `assets/css/style.css`
   - Scripts: `assets/js/script.js`, optional module `eltheonFull.esm.js`
+  - Logic modules (UMD + CommonJS): `assets/js/logic/`
+    - `economy.js` (monthly resolution), `ai.js` (heuristics), `text.js` (labels/icons/scoring),
+      `score.js` (end summary), `datetime.js` (formatting/ticks), `seasons.js` (banner rotation)
   - Images: `assets/img/`
 - Design spec: `README.md` (German, game and economy details). Treat as source of truth.
  - Backlog: `docs/backlog.md` (curated ideas → agent tickets).
@@ -20,13 +23,14 @@
 - JavaScript: `camelCase` for variables/functions; avoid globals—group related logic in functions near usage.
 - CSS: class/ID names in `kebab-case` (e.g., `.province-card`, `#game-container`).
 - Filenames: lowercase with hyphens or clear words (e.g., `game.html`, `script.js`, `header.png`).
-- Keep `script.js` focused on UI + simple state; if logic grows, split into `assets/js/` modules.
+- Keep `script.js` focused on UI + simple state; move pure logic into `assets/js/logic/*`.
+- Add English JSDoc to public functions and key helpers.
 
 ## Testing Guidelines
 - Manual playtest: verify monthly progression, event choices, build/recruit options, and end screen.
 - Cross‑browser sanity: latest Chrome and Firefox.
 - Console hygiene: no uncaught errors or noisy logs.
-- If adding logic modules, prefer lightweight unit tests (e.g., Jest) in `assets/js/__tests__/` with `*.test.js` and pure functions without DOM.
+- If adding logic modules, prefer lightweight unit tests (Jest) in `assets/js/__tests__/` with `*.test.js` and pure functions without DOM. Current coverage includes economy/ai/text/score/datetime/seasons.
  - Detailed checklists live in `docs/testing.md` (Smoke + feature‑spezifisch).
 
 ## Commit & Pull Request Guidelines
@@ -78,6 +82,14 @@
   - Header shows role pill (Spieler/Vasall), AI emblem, and optional crest image (`crestImg`) or fallback initial (`crestText`).
 - Icons: PNGs masked via CSS (`.icon` uses `mask-image` + `currentColor`) so they inherit text color.
   - Small variants live under `assets/img/icons/small/` (48x48).
+ - Seasonal banner: header image rotates by season (Jan/Apr/Jul/Oct); assets in `assets/img/banners/`. Desktop framing uses vertical squash with top focus; mobile shows true 16:9.
+
+### Architecture Notes
+- `nextMonth` uses `DLD.logicEconomy.applyMonthlyEconomy` (required).
+- AI uses `DLD.logicAI.applyAI` (required).
+- End screen uses `DLD.logicScore`.
+- Date formatting and progress bar use `DLD.logicDatetime`.
+- Option label scoring/iconization uses `DLD.logicText`.
 
 ### State & Testing
 - Global state module is not used yet; ignore `EltheonJS.state` for now.

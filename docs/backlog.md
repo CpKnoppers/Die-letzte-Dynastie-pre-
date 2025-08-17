@@ -29,6 +29,7 @@ P1 (Top Priorität)
   - Dateien: `docs/testing.md`, `assets/js/__tests__/*`
   - Tests: Selbstbeschreibend (Checklisten + Jest)
   - Notizen: Nur pure Logik unit‑testen; DOM via manuelle Checks
+  - Fortschritt: Jest‑Tests für Economy/AI/Text/Score/Datetime/Seasons vorhanden; `npm test` grün. Checklisten in `docs/testing.md` angelegt.
 
 - [ ] Persistenz: Spielerprofil & Landverwaltung
   - Ziel: Spieler legt lokales Profil an (Name/Wappen) und verwaltet sein Land; Daten bleiben über Sessions erhalten.
@@ -53,6 +54,7 @@ P1 (Top Priorität)
   - Dateien: `game.html`, `assets/css/style.css`, `assets/js/script.js`, `assets/img/icons/*`
   - Tests: Manuell klicken, Zustände prüfen, Ressourcenprüfung
   - Notizen: Externe Icons werden später ergänzt; Platzhalter verwenden
+  - Fortschritt: Tooltips + Disable‑Logik implementiert, Inline‑Hinweise ausgerichtet; keine Loop‑Pausen; Konsole sauber.
 
 - [ ] AI‑Vasallen: monatliche Ereignisse & Entscheidungen (simuliert)
   - Ziel: KI‑Vasallen erhalten monatlich Ereignisse und treffen Entscheidungen per Heuristik (ohne Darstellung), die ihre Werte anpassen.
@@ -61,6 +63,7 @@ P1 (Top Priorität)
   - Dateien: `assets/js/script.js`, optional `assets/js/logic/ai.js`, Events‑Daten
   - Tests: 3 Monate simulieren, Logs kurz prüfen (debug minimal)
   - Notizen: Keine UI nötig; nur State‑Änderungen
+  - Fortschritt: `assets/js/logic/ai.js` implementiert und verdrahtet; heuristische Entscheidungen pro Monat aktiv. Event‑Simulation für KI optional offen.
 
 - [ ] Vasalleneinfluss: fordern/schenken & Hilferufe
   - Ziel: Spieler kann Ressourcen von Vasallen anfordern oder schenken; Vasallen melden Hilfebedarf je nach Lage.
@@ -77,9 +80,15 @@ P1 (Top Priorität)
   - Dateien: `assets/js/script.js`, `assets/js/logic/*`, `assets/data/*.json`, `game.html`
   - Tests: Smoke‑Test über 3–4 Monate; Bau/Rekrut/Event einmal durchspielen
   - Notizen: README/AGENTS ggf. um Ladehinweis (lokaler Server nötig) ergänzen
+  - Fortschritt: Module eingeführt (`economy`, `ai`, `text`, `score`, `datetime`, `seasons`), `script.js` nutzt diese; Templating konsistent. Ausstehend: Daten nach `assets/data/*.json` auslagern.
 
 P2
 - [ ] Monatsreport‑Overlay (aus Beispiel übernehmen)
+- [x] Saisonales Banner (Header‑Rotation)
+  - Ziel: Jahreszeiten‑abhängiges Banner (Jan/Apr/Jul/Okt), Preload gegen Flicker.
+  - Akzeptanz: Assets unter `assets/img/banners`, Rotation ohne Konsolenfehler, Desktop/Mobile Layouts korrekt.
+  - Dateien: `assets/js/logic/seasons.js`, `assets/js/script.js`, `assets/css/style.css`, `assets/img/banners/*`
+  - Notizen: Desktop nutzt vertikale Stauchung mit Top‑Fokus; mobil 16:9.
 
 P3
 - [ ] Platzhalter
