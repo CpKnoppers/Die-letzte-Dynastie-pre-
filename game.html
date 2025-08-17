@@ -20,6 +20,7 @@
         <div class="province-header">
           <h2 class="card-title mb-2" data-tpl-key="name">{{name}}</h2>
           <div class="header-right">
+            <img class="crest-img" data-tpl-if="crestImg" src="{{crestImg}}" alt="Wappen" title="{{crestTitle}}" />
             <span class="crest" data-tpl-if="crestText" data-tpl-key="crestText" title="{{crestTitle}}">{{crestText}}</span>
             <span class="emblem ai" data-tpl-if="isAI" aria-label="KI">AI</span>
             <span class="role-badge" data-tpl-key="role">{{role}}</span>
