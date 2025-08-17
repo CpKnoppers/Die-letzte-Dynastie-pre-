@@ -353,15 +353,26 @@ function updateUI() {
   aiContainer.innerHTML = '';
   Object.keys(provinces).forEach(key => {
     const prov = provinces[key];
+    // Erwartete Produktion (vereinfachte Vorschau, wie in nextMonth berechnet)
+    const fHarvest = 1 + 0.4 * ((prov.morale - 50) / 50);
+    const fTax = 1 + 0.3 * ((prov.morale - 50) / 50);
+    const prodF = Math.round(prov.baseF * fHarvest);
+    const taxG = Math.round(prov.baseG * fTax + (prov.hasMarket ? 10 : 0));
     const values = {
       name: prov.name,
       food: Math.round(prov.food),
       foodCap: prov.foodCap,
       foodPct: Math.max(0, Math.min(100, Math.round((prov.food / Math.max(1, prov.foodCap)) * 100))),
+      foodProd: prodF,
       gold: Math.round(prov.gold),
+      goldProd: taxG,
       troops: Math.round(prov.troops),
       workers: Math.round(prov.workers),
       morale: Math.round(prov.morale),
+      moralePct: Math.max(0, Math.min(100, Math.round(prov.morale))),
+      moraleClass: (prov.morale < 40 ? 'low' : (prov.morale < 70 ? 'med' : 'high')),
+      role: (key === 'player' ? 'Spieler' : (key === 'ai1' ? 'Vasall 1' : (key === 'ai2' ? 'Vasall 2' : ''))),
+      isAI: (key !== 'player'),
       // Badge-Liste aus Gebäude-Status ableiten
       badges: (function() {
         const out = [];

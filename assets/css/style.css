@@ -125,7 +125,27 @@ main {
   color: #5a3e18;
   font-family: var(--font-heading);
 }
-.province-header { margin-bottom: 6px; }
+.province-header { margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.header-right { display: inline-flex; align-items: center; gap: 6px; }
+.role-badge {
+  align-self: flex-start;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(90, 62, 24, 0.12);
+  color: #5a3e18;
+  font-size: 0.8rem;
+}
+.emblem.ai {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: #5a3e18;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
 
 /* Province stats grid */
 .stats-grid {
@@ -148,6 +168,14 @@ main {
   background: linear-gradient(90deg, #835c32, #b0895a);
   transition: width 180ms ease-out;
 }
+.stat .meter.morale .bar { background: #3a9d23; }
+.stat .meter.morale .bar.med { background: #d9a321; }
+.stat .meter.morale .bar.low { background: #b44; }
+.stat .hint { font-size: 0.85rem; color: rgba(90,62,24,0.9); margin-top: 2px; }
+
+/* Per-card icon tinting */
+.player-card .icon { color: #835c32; }
+.ai-card .icon { color: #5a3e18; }
 .province-card ul {
   list-style: none;
   padding: 0;
