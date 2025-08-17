@@ -1,13 +1,39 @@
 /* Basis-Styling für Crown & Crisis Prototyp */
+:root {
+  --font-body: 'EB Garamond', Georgia, 'Times New Roman', serif;
+  --font-heading: 'Cinzel', 'EB Garamond', Georgia, serif;
+}
+
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
+  font-family: var(--font-body);
   background-color: #f4efe8;
   background-image: url('../img/parchment.png');
   background-size: cover;
   background-repeat: no-repeat;
   background-attachment: fixed;
   color: #333;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-heading);
+}
+
+/* Subtile typografische Verfeinerungen für Überschriften */
+h1 {
+  letter-spacing: 0.04em;
+  line-height: 1.1;
+  font-weight: 700;
+}
+h2 {
+  letter-spacing: 0.03em;
+  line-height: 1.15;
+  font-weight: 700;
+}
+h3 {
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  font-weight: 400;
 }
 
 #game-container {
@@ -32,6 +58,7 @@ header h1 {
   margin: 0;
   font-size: 2.4rem;
   color: #5a3e18;
+  font-family: var(--font-heading);
 }
 header #month-counter {
   margin: 4px 0 0;
@@ -57,16 +84,30 @@ main {
 .province-card {
   flex: 1 1 280px;
   min-width: 250px;
+  position: relative;
 }
 
 /* Spieler-Karte hervorheben */
 .province-card.player-card {
   border: 2px solid #835c32;
 }
+
+/* Frame sprite integration (2x2 sprite sheets: TL, TR, BL, BR) */
+/* Canvas-rendered frame overlay (nine-slice, no stretching) */
+.province-card .frame-overlay {
+  position: absolute;
+  inset: 0;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+.province-card > * { position: relative; z-index: 1; }
 .province-card h2 {
   margin-top: 0;
   font-size: 1.4rem;
   color: #5a3e18;
+  font-family: var(--font-heading);
 }
 .province-card ul {
   list-style: none;
@@ -90,6 +131,7 @@ main {
 .panel h2 {
   margin-top: 0;
   color: #5a3e18;
+  font-family: var(--font-heading);
 }
 
 /* Unter-Überschriften im Build-Panel */
@@ -97,6 +139,7 @@ main {
   margin: 12px 0 4px;
   font-size: 1.1rem;
   color: #5a3e18;
+  font-family: var(--font-heading);
 }
 
 .options {

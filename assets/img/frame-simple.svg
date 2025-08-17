@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="parch" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#c9a97a"/>
+      <stop offset="100%" stop-color="#b28b5a"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="256" height="256" fill="none"/>
+  <rect x="18" y="18" width="220" height="220" fill="none" stroke="url(#parch)"
+        stroke-width="26" rx="4" ry="4"/>
+</svg>

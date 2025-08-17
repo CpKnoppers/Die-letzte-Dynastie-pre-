@@ -325,6 +325,7 @@ function updateUI() {
       }
     }
   });
+  // Rahmen-Overlays wurden entfernt; keine Nachbearbeitung nötig
 }
 
 function showEvent() {
