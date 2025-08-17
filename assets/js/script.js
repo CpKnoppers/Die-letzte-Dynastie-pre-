@@ -357,11 +357,25 @@ function updateUI() {
       name: prov.name,
       food: Math.round(prov.food),
       foodCap: prov.foodCap,
+      foodPct: Math.max(0, Math.min(100, Math.round((prov.food / Math.max(1, prov.foodCap)) * 100))),
       gold: Math.round(prov.gold),
       troops: Math.round(prov.troops),
       workers: Math.round(prov.workers),
       morale: Math.round(prov.morale),
-      buildings: prov.buildings.length > 0 ? prov.buildings.join(', ') : '—',
+      // Badge-Liste aus Gebäude-Status ableiten
+      badges: (function() {
+        const out = [];
+        if (prov.hasMarket) out.push({ label: 'Markt' });
+        if (prov.hasBarracks) out.push({ label: 'Kaserne' });
+        if (prov.hasFort) out.push({ label: 'Fort' });
+        if ((prov.temples || 0) > 0) out.push({ label: `Tempel ×${prov.temples}` });
+        // Bestehende benannte Bauten aufnehmen, ohne Duplikate
+        (prov.buildings || []).forEach(b => {
+          if (!out.some(x => x.label === b) && b) out.push({ label: b });
+        });
+        return out;
+      })(),
+      hasBadges: ((prov.hasMarket || prov.hasBarracks || prov.hasFort || (prov.temples || 0) > 0 || (prov.buildings||[]).length>0) ? true : false),
       cardClass: key === 'player' ? 'player-card' : 'ai-card'
     };
     if (window.EltheonJS && window.EltheonJS.templating) {

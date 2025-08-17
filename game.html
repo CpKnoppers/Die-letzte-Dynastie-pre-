@@ -17,32 +17,45 @@
     <!-- Templates (processed by EltheonJS.templating) -->
     <template data-tpl="province-card">
       <div class="province-card card p-3 mb-3 {{cardClass}}">
-        <h2 class="card-title" data-tpl-key="name">{{name}}</h2>
-        <ul class="list-unstyled mb-0 stats-list">
-          <li>
-            <span class="icon icon-food" aria-hidden="true"></span>
-            Nahrung: <strong data-tpl-key="food">{{food}}</strong> / {{foodCap}}
-          </li>
-          <li>
-            <span class="icon icon-gold" aria-hidden="true"></span>
-            Gold: <strong data-tpl-key="gold">{{gold}}</strong>
-          </li>
-          <li>
-            <span class="icon icon-troops" aria-hidden="true"></span>
-            Truppen: <strong data-tpl-key="troops">{{troops}}</strong>
-          </li>
-          <li>
-            <span class="icon icon-workers" aria-hidden="true"></span>
-            Arbeiter: <strong data-tpl-key="workers">{{workers}}</strong>
-          </li>
-          <li>
-            <span class="icon icon-morale" aria-hidden="true"></span>
-            Moral: <strong data-tpl-key="morale">{{morale}}</strong>
-          </li>
-          <li>
-            Gebäude: <span data-tpl-key="buildings">{{buildings}}</span>
-          </li>
-        </ul>
+        <div class="province-header">
+          <h2 class="card-title mb-2" data-tpl-key="name">{{name}}</h2>
+        </div>
+        <div class="stats-grid">
+          <div class="stat">
+            <div class="stat-row">
+              <span class="icon icon-food" aria-hidden="true"></span>
+              <span>Nahrung: <strong data-tpl-key="food">{{food}}</strong> / {{foodCap}}</span>
+            </div>
+            <div class="meter" aria-hidden="true"><div class="bar" style="width: {{foodPct}}%;"></div></div>
+          </div>
+          <div class="stat">
+            <div class="stat-row">
+              <span class="icon icon-gold" aria-hidden="true"></span>
+              <span>Gold: <strong data-tpl-key="gold">{{gold}}</strong></span>
+            </div>
+          </div>
+          <div class="stat">
+            <div class="stat-row">
+              <span class="icon icon-troops" aria-hidden="true"></span>
+              <span>Truppen: <strong data-tpl-key="troops">{{troops}}</strong></span>
+            </div>
+          </div>
+          <div class="stat">
+            <div class="stat-row">
+              <span class="icon icon-workers" aria-hidden="true"></span>
+              <span>Arbeiter: <strong data-tpl-key="workers">{{workers}}</strong></span>
+            </div>
+          </div>
+          <div class="stat">
+            <div class="stat-row">
+              <span class="icon icon-morale" aria-hidden="true"></span>
+              <span>Moral: <strong data-tpl-key="morale">{{morale}}</strong></span>
+            </div>
+          </div>
+        </div>
+        <div class="badges" data-tpl-if="hasBadges">
+          <span class="tag" data-tpl-foreach="badges" data-tpl-key="label">{{label}}</span>
+        </div>
       </div>
     </template>
 

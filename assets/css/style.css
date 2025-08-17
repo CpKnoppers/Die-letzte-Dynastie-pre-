@@ -125,6 +125,29 @@ main {
   color: #5a3e18;
   font-family: var(--font-heading);
 }
+.province-header { margin-bottom: 6px; }
+
+/* Province stats grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px 14px;
+  align-items: start;
+}
+.stat-row { display: flex; align-items: center; gap: 8px; }
+.stat .meter {
+  height: 6px;
+  background: rgba(90, 62, 24, 0.15);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+.stat .meter .bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #835c32, #b0895a);
+  transition: width 180ms ease-out;
+}
 .province-card ul {
   list-style: none;
   padding: 0;
@@ -202,6 +225,17 @@ main {
 .options-list .btn:disabled {
   opacity: 0.65;
   cursor: not-allowed;
+}
+
+/* Building tags */
+.badges { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+.tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(90, 62, 24, 0.12);
+  color: #5a3e18;
+  font-size: 0.85rem;
 }
 
 footer {
