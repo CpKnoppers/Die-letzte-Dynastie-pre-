@@ -127,6 +127,17 @@ main {
 }
 .province-header { margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .header-right { display: inline-flex; align-items: center; gap: 6px; }
+.crest {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: #e9d9c6;
+  color: #5a3e18;
+  font-weight: 700;
+  border: 1px solid rgba(90,62,24,0.3);
+}
 .role-badge {
   align-self: flex-start;
   padding: 2px 8px;

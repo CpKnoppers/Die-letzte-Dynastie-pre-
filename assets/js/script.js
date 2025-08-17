@@ -358,6 +358,13 @@ function updateUI() {
     const fTax = 1 + 0.3 * ((prov.morale - 50) / 50);
     const prodF = Math.round(prov.baseF * fHarvest);
     const taxG = Math.round(prov.baseG * fTax + (prov.hasMarket ? 10 : 0));
+    // Vereinfachte Netto-Vorhersagen (Unterhalt vs. Produktion)
+    const upFNow = Math.ceil(prov.troops / 100) * 6 + Math.ceil(prov.workers / 100) * 4;
+    const upGNow = Math.ceil(prov.troops / 100) * 8 + Math.ceil(prov.workers / 100) * 6;
+    const goldNet = taxG - upGNow;
+    const willFoodDeficit = (prov.food - upFNow) < 0;
+    const willGoldDeficit = (prov.gold - upGNow) < 0;
+    const moraleDelta = (prov.temples ? 3 * prov.temples : 0) - (willFoodDeficit ? 5 : 0) - (willGoldDeficit ? 5 : 0);
     const values = {
       name: prov.name,
       food: Math.round(prov.food),
@@ -366,13 +373,16 @@ function updateUI() {
       foodProd: prodF,
       gold: Math.round(prov.gold),
       goldProd: taxG,
+      goldNet: goldNet,
       troops: Math.round(prov.troops),
       workers: Math.round(prov.workers),
       morale: Math.round(prov.morale),
       moralePct: Math.max(0, Math.min(100, Math.round(prov.morale))),
       moraleClass: (prov.morale < 40 ? 'low' : (prov.morale < 70 ? 'med' : 'high')),
+      moraleDelta: moraleDelta,
       role: (key === 'player' ? 'Spieler' : (key === 'ai1' ? 'Vasall 1' : (key === 'ai2' ? 'Vasall 2' : ''))),
       isAI: (key !== 'player'),
+      crestText: (prov.name && typeof prov.name === 'string' ? prov.name.trim().charAt(0).toUpperCase() : ''),
       // Badge-Liste aus Gebäude-Status ableiten
       badges: (function() {
         const out = [];

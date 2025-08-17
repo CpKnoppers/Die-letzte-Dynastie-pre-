@@ -20,6 +20,7 @@
         <div class="province-header">
           <h2 class="card-title mb-2" data-tpl-key="name">{{name}}</h2>
           <div class="header-right">
+            <span class="crest" data-tpl-if="crestText" data-tpl-key="crestText">{{crestText}}</span>
             <span class="emblem ai" data-tpl-if="isAI" aria-label="KI">AI</span>
             <span class="role-badge" data-tpl-key="role">{{role}}</span>
           </div>
@@ -38,6 +39,7 @@
               <span class="icon icon-gold" aria-hidden="true"></span>
               <span>Gold: <strong data-tpl-key="gold">{{gold}}</strong></span>
             </div>
+            <div class="hint" aria-hidden="true">≈ {{goldNet}} / Monat</div>
           </div>
           <div class="stat">
             <div class="stat-row">
@@ -57,6 +59,7 @@
               <span>Moral: <strong data-tpl-key="morale">{{morale}}</strong></span>
             </div>
             <div class="meter morale" aria-hidden="true"><div class="bar {{moraleClass}}" style="width: {{moralePct}}%;"></div></div>
+            <div class="hint" aria-hidden="true">≈ {{moraleDelta}} / Monat</div>
           </div>
         </div>
         <div class="badges" data-tpl-if="hasBadges">
