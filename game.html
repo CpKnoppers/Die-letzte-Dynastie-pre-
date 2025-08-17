@@ -97,8 +97,10 @@
       </div>
     </template>
     <header class="text-center mb-4">
-      <!-- Titelbild -->
-      <img id="title-image" src="assets/img/header.png" alt="Titelbild" class="img-fluid rounded" />
+      <!-- Titelbild (seasonal banner in a fixed 16:9 area) -->
+      <div id="title-banner" class="banner-wrap rounded">
+        <img id="title-image" src="assets/img/header.png" alt="Titelbild" />
+      </div>
       <h1>Die letzte Dynastie</h1>
       <p id="month-counter">Monat 1 / 24</p>
       <div id="day-progress" class="day-progress" aria-hidden="true">
@@ -141,6 +143,7 @@
   <script src="assets/js/logic/ai.js"></script>
   <script src="assets/js/logic/score.js"></script>
   <script src="assets/js/logic/datetime.js"></script>
+  <script src="assets/js/logic/seasons.js"></script>
   <script src="assets/js/logic/economy.js"></script>
   <!-- Spiel-Logik -->
   <script src="assets/js/script.js"></script>

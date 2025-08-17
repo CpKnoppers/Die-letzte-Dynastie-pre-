@@ -98,6 +98,9 @@ let workersUsedThisMonth = 0;
 let currentDate = new Date(925, 3, 1); // 1.4.925 (Monat 0-basiert)
 let tickMs = 1000;
 const TICK_KEY = 'gameTick';
+const DEFAULT_HEADER_IMG = 'assets/img/header.png';
+let currentSeasonShown = '';
+let seasonPreloaded = false;
 
 /**
  * Format a Date object as DD.MM.YYYY string (delegates to logicDatetime).
@@ -135,6 +138,8 @@ function updateDateUI() {
       bar.style.width = pct + '%';
     }
   }
+  // Update seasonal banner if season changed
+  updateSeasonBanner(currentDate);
 }
 
 /**
@@ -194,6 +199,46 @@ function startLoop() {
       nextMonth(true);
     }
   });
+}
+
+/**
+ * Apply a seasonal banner image according to the current date.
+ * Uses DLD.logicSeasons to compute the path, and falls back gracefully
+ * to DEFAULT_HEADER_IMG when the seasonal asset is not found.
+ * @param {Date} d - Current in-game date.
+ */
+function updateSeasonBanner(d) {
+  const img = document.getElementById('title-image');
+  if (!img) return;
+  const api = window.DLD && window.DLD.logicSeasons && window.DLD.logicSeasons.getSeasonImageForDate;
+  const nameApi = window.DLD && window.DLD.logicSeasons && window.DLD.logicSeasons.getSeasonName;
+  if (!api || !nameApi) return;
+  const seasonName = nameApi(d.getMonth());
+  if (seasonName === currentSeasonShown) return;
+  const path = api(d, { basePath: 'assets/img/banners/' });
+  const onerr = () => {
+    img.removeEventListener('error', onerr);
+    img.src = DEFAULT_HEADER_IMG;
+  };
+  img.addEventListener('error', onerr, { once: true });
+  img.src = path;
+  currentSeasonShown = seasonName;
+}
+
+/**
+ * Preload all seasonal banner images to minimize flicker on switch.
+ * Safe for mobile: only four requests, falls back silently if missing.
+ */
+function preloadAllSeasonBanners() {
+  if (seasonPreloaded) return;
+  const api = window.DLD && window.DLD.logicSeasons && window.DLD.logicSeasons.getSeasonImage;
+  if (!api) return;
+  [0, 3, 6, 9].forEach((m) => {
+    const path = api(m, { basePath: 'assets/img/banners/' });
+    const img = new Image();
+    img.src = path;
+  });
+  seasonPreloaded = true;
 }
 
 // Ereigniskarten
@@ -977,6 +1022,8 @@ window.addEventListener('DOMContentLoaded', () => {
   if (window.EltheonJS && window.EltheonJS.templatingExt) {
     try { window.EltheonJS.templatingExt.init(); } catch (_) {}
   }
+  // Preload seasonal banners (winter/spring/summer/autumn)
+  preloadAllSeasonBanners();
   updateUI();
   showBuildOptions();
   // Loop starten und initiales Ereignis anzeigen (ohne Pause, Option A)
