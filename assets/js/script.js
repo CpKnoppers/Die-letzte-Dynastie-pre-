@@ -361,28 +361,36 @@ function updateUI() {
     // Vereinfachte Netto-Vorhersagen (Unterhalt vs. Produktion)
     const upFNow = Math.ceil(prov.troops / 100) * 6 + Math.ceil(prov.workers / 100) * 4;
     const upGNow = Math.ceil(prov.troops / 100) * 8 + Math.ceil(prov.workers / 100) * 6;
+    const foodNet = prodF - upFNow;
     const goldNet = taxG - upGNow;
     const willFoodDeficit = (prov.food - upFNow) < 0;
     const willGoldDeficit = (prov.gold - upGNow) < 0;
     const moraleDelta = (prov.temples ? 3 * prov.temples : 0) - (willFoodDeficit ? 5 : 0) - (willGoldDeficit ? 5 : 0);
+    const crestText = (prov.name && typeof prov.name === 'string' ? prov.name.trim().charAt(0).toUpperCase() : '');
+    const crestTitle = prov.name ? `Wappen – ${prov.name}` : 'Wappen';
     const values = {
       name: prov.name,
       food: Math.round(prov.food),
       foodCap: prov.foodCap,
       foodPct: Math.max(0, Math.min(100, Math.round((prov.food / Math.max(1, prov.foodCap)) * 100))),
       foodProd: prodF,
+      foodNet: foodNet,
+      foodHint: `Produktion: +${prodF} · Unterhalt: -${upFNow}`,
       gold: Math.round(prov.gold),
       goldProd: taxG,
       goldNet: goldNet,
+      goldHint: `Steuern: +${taxG} · Unterhalt: -${upGNow}`,
       troops: Math.round(prov.troops),
       workers: Math.round(prov.workers),
       morale: Math.round(prov.morale),
       moralePct: Math.max(0, Math.min(100, Math.round(prov.morale))),
       moraleClass: (prov.morale < 40 ? 'low' : (prov.morale < 70 ? 'med' : 'high')),
       moraleDelta: moraleDelta,
+      moraleHint: `Tempel: +${(prov.temples||0)*3}${willFoodDeficit? ' · Mangel Nahrung: -5':''}${willGoldDeficit? ' · Mangel Gold: -5':''}`,
       role: (key === 'player' ? 'Spieler' : (key === 'ai1' ? 'Vasall 1' : (key === 'ai2' ? 'Vasall 2' : ''))),
       isAI: (key !== 'player'),
-      crestText: (prov.name && typeof prov.name === 'string' ? prov.name.trim().charAt(0).toUpperCase() : ''),
+      crestText: crestText,
+      crestTitle: crestTitle,
       // Badge-Liste aus Gebäude-Status ableiten
       badges: (function() {
         const out = [];

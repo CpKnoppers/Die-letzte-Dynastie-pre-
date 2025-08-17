@@ -138,6 +138,13 @@ main {
   font-weight: 700;
   border: 1px solid rgba(90,62,24,0.3);
 }
+.crest-img {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgba(90,62,24,0.3);
+}
 .role-badge {
   align-self: flex-start;
   padding: 2px 8px;
