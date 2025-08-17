@@ -65,6 +65,52 @@ let buildingUsed = false;
 // Anzahl der in diesem Monat für Bauten genutzten Arbeiter
 let workersUsedThisMonth = 0;
 
+// Datum und Spielloop (über EltheonJS.scheduler)
+let currentDate = new Date(925, 3, 1); // 1.4.925 (Monat 0-basiert)
+let tickMs = 1000;
+const TICK_KEY = 'gameTick';
+
+function formatDate(d) {
+  const dd = String(d.getDate()).padStart(1, '0');
+  const mm = String(d.getMonth() + 1);
+  const yyyy = d.getFullYear();
+  return `${dd}.${mm}.${yyyy}`;
+}
+
+function updateDateUI() {
+  const monthCounter = document.getElementById('month-counter');
+  if (!monthCounter) return;
+  const dateStr = formatDate(currentDate);
+  monthCounter.textContent = `${dateStr} — Monat ${month} / ${maxMonths}`;
+}
+
+function pauseLoop() {
+  const sch = window.EltheonJS && window.EltheonJS.scheduler;
+  const it = sch && sch.interval && sch.interval(TICK_KEY);
+  if (it && it.pause) it.pause();
+}
+
+function resumeLoop() {
+  const sch = window.EltheonJS && window.EltheonJS.scheduler;
+  const it = sch && sch.interval && sch.interval(TICK_KEY);
+  if (it && it.resume) it.resume();
+}
+
+function startLoop() {
+  const sch = window.EltheonJS && window.EltheonJS.scheduler;
+  if (!sch || !sch.every) return;
+  sch.every(TICK_KEY, tickMs, () => {
+    // Einen Tag weiterschalten
+    currentDate.setDate(currentDate.getDate() + 1);
+    updateDateUI();
+    // Bei Monatswechsel Produktion anwenden und neues Ereignis öffnen
+    if (currentDate.getDate() === 1) {
+      // Monatsschluss auswerten und neuen Monat beginnen
+      nextMonth(true);
+    }
+  });
+}
+
 // Ereigniskarten
 const eventPool = [
   {
@@ -275,9 +321,8 @@ eventPool.push({
 
 // Hilfsfunktionen
 function updateUI() {
-  // Monat aktualisieren
-  const monthCounter = document.getElementById('month-counter');
-  monthCounter.textContent = `Monat ${month} / ${maxMonths}`;
+  // Monat/Datum aktualisieren
+  updateDateUI();
   // Provinzen ausgeben – separate Container für Spieler und Vasallen
   const playerContainer = document.getElementById('player-province');
   const aiContainer = document.getElementById('ai-provinces');
@@ -361,7 +406,8 @@ function showEvent() {
         if (!opt) return;
         opt.effect();
         panel.classList.add('hidden');
-        nextMonth();
+        // Ereignis gewählt – Spielloop fortsetzen
+        resumeLoop();
       }
     });
     optionsEl.appendChild(tpl.element);
@@ -374,7 +420,7 @@ function showEvent() {
       btn.addEventListener('click', () => {
         opt.effect();
         panel.classList.add('hidden');
-        nextMonth();
+        resumeLoop();
       });
       optionsEl.appendChild(btn);
     });
@@ -594,7 +640,7 @@ function showRecruitOptions() {
   }
 }
 
-function nextMonth() {
+function nextMonth(autoShowEvent = true) {
   // Ressourcen aktualisieren
   Object.keys(provinces).forEach(key => {
     const prov = provinces[key];
@@ -651,10 +697,15 @@ function nextMonth() {
   // Spielende prüfen
   if (month > maxMonths) {
     endGame();
+    pauseLoop();
     return;
   }
   updateUI();
-  showEvent();
+  if (autoShowEvent) {
+    // Neues Ereignis zu Monatsbeginn; Loop pausieren bis Auswahl
+    showEvent();
+    pauseLoop();
+  }
 }
 
 function aiActions(prov) {
@@ -769,6 +820,8 @@ window.addEventListener('DOMContentLoaded', () => {
   }
   updateUI();
   showBuildOptions();
-  // Erste Ereignisanzeige zum Start
+  // Loop starten und direkt zum Monatsbeginn pausieren mit Ereignis
+  startLoop();
   showEvent();
+  pauseLoop();
 });
