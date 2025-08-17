@@ -273,9 +273,22 @@ main {
 .options-list .btn {
   text-align: left;
 }
-.options-list .btn:disabled {
-  opacity: 0.65;
+.options-list .btn:disabled,
+.options .btn:disabled,
+.options-list .btn[aria-disabled="true"],
+.options .btn[aria-disabled="true"] {
+  opacity: 0.6;
   cursor: not-allowed;
+  color: #7a6a56;
+  box-shadow: none !important;
+  filter: none;
+}
+.options-list .btn:disabled .icon,
+.options .btn:disabled .icon,
+.options-list .btn[aria-disabled="true"] .icon,
+.options .btn[aria-disabled="true"] .icon {
+  opacity: 0.6;
+  filter: grayscale(100%);
 }
 
 /* Building tags */

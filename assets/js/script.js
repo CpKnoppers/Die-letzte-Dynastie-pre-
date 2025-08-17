@@ -1,5 +1,31 @@
 // Die letzte Dynastie – einfacher Prototyp für Einzelspieler mit zwei KI-Vasallen
 
+/**
+ * @typedef {Object} Province
+ * @property {string} name
+ * @property {number} food
+ * @property {number} gold
+ * @property {number} troops
+ * @property {number} morale
+ * @property {number} foodCap
+ * @property {number} baseF
+ * @property {number} baseG
+ * @property {Array<string>} buildings
+ * @property {number} buildingSlots
+ * @property {boolean} hasMarket
+ * @property {boolean} hasBarracks
+ * @property {number} temples
+ * @property {boolean} hasFort
+ * @property {number} workers
+ * @property {string} [crestImg]
+ */
+
+/**
+ * @typedef {Object} AIContext
+ * @property {number} month
+ * @property {number} maxMonths
+ */
+
 // Provinzdatenstruktur
 const provinces = {
   player: {
@@ -73,13 +99,24 @@ let currentDate = new Date(925, 3, 1); // 1.4.925 (Monat 0-basiert)
 let tickMs = 1000;
 const TICK_KEY = 'gameTick';
 
+/**
+ * Format a Date object as DD.MM.YYYY string (delegates to logicDatetime).
+ * @param {Date} d - The date to format.
+ * @returns {string} Human-readable date string.
+ */
 function formatDate(d) {
+  const api = window.DLD && window.DLD.logicDatetime && window.DLD.logicDatetime.formatDate;
+  if (typeof api === 'function') return api(d);
   const dd = String(d.getDate()).padStart(2, '0');
   const mm = String(d.getMonth() + 1).padStart(2, '0');
   const yyyy = d.getFullYear();
   return `${dd}.${mm}.${yyyy}`;
 }
 
+/**
+ * Update the date label and day progress bar in the header.
+ * Uses EltheonJS templating state only for dynamic content already on DOM.
+ */
 function updateDateUI() {
   const monthCounter = document.getElementById('month-counter');
   if (!monthCounter) return;
@@ -90,36 +127,58 @@ function updateDateUI() {
   if (prog) {
     const bar = prog.querySelector('.bar');
     if (bar) {
-      const totalDays = daysInMonth(currentDate.getFullYear(), currentDate.getMonth());
-      const day = currentDate.getDate();
-      const pct = Math.max(0, Math.min(100, Math.round(((day - 1) / totalDays) * 100)));
+      const api = window.DLD && window.DLD.logicDatetime && window.DLD.logicDatetime.computeDayProgress;
+      const pct = typeof api === 'function' ? api(currentDate) : (function(d){
+        const totalDays = daysInMonth(d.getFullYear(), d.getMonth());
+        return Math.max(0, Math.min(100, Math.round(((d.getDate() - 1) / totalDays) * 100)));
+      })(currentDate);
       bar.style.width = pct + '%';
     }
   }
 }
 
+/**
+ * Compute number of days in a given month (delegates to logicDatetime).
+ * @param {number} year - Full year, e.g. 925.
+ * @param {number} monthIndex - Month index 0..11.
+ * @returns {number} Days in that month.
+ */
 function daysInMonth(year, monthIndex) {
-  // monthIndex: 0-11
+  const api = window.DLD && window.DLD.logicDatetime && window.DLD.logicDatetime.daysInMonth;
+  if (typeof api === 'function') return api(year, monthIndex);
   return new Date(year, monthIndex + 1, 0).getDate();
 }
 
+/**
+ * Pause the main scheduler loop via EltheonJS, if available.
+ */
 function pauseLoop() {
   const sch = window.EltheonJS && window.EltheonJS.scheduler;
   const it = sch && sch.interval && sch.interval(TICK_KEY);
   if (it && it.pause) it.pause();
 }
 
+/**
+ * Resume the main scheduler loop via EltheonJS, if available.
+ */
 function resumeLoop() {
   const sch = window.EltheonJS && window.EltheonJS.scheduler;
   const it = sch && sch.interval && sch.interval(TICK_KEY);
   if (it && it.resume) it.resume();
 }
 
+/**
+ * Stop the main scheduler loop via EltheonJS, if available.
+ */
 function stopLoop() {
   const sch = window.EltheonJS && window.EltheonJS.scheduler;
   if (sch && sch.stop) sch.stop(TICK_KEY);
 }
 
+/**
+ * Start the 1s/day game loop using EltheonJS.scheduler.
+ * On day=1 triggers monthly processing and auto-resolve for open events.
+ */
 function startLoop() {
   const sch = window.EltheonJS && window.EltheonJS.scheduler;
   if (!sch || !sch.every) return;
@@ -346,6 +405,10 @@ eventPool.push({
 });
 
 // Hilfsfunktionen
+/**
+ * Render the provinces state into the DOM. Uses EltheonJS templating when
+ * available; falls back to simple DOM building otherwise.
+ */
 function updateUI() {
   // Monat/Datum aktualisieren
   updateDateUI();
@@ -423,6 +486,8 @@ function updateUI() {
     };
     if (window.EltheonJS && window.EltheonJS.templating) {
       const el = window.EltheonJS.templatingExt.render('province-card', values);
+      // Hydrate crest images from data-src to src to avoid 404 on placeholders
+      hydrateCrestImages(el.element);
       if (key === 'player') {
         playerContainer.appendChild(el.element);
       } else {
@@ -453,6 +518,26 @@ function updateUI() {
   // Rahmen-Overlays wurden entfernt; keine Nachbearbeitung nötig
 }
 
+/**
+ * Set `src` from `data-src` for crest images within a rendered root element.
+ * This avoids early 404s when templates momentarily contain placeholders.
+ * @param {HTMLElement} root - The rendered template root to scan.
+ */
+function hydrateCrestImages(root) {
+  if (!root) return;
+  const imgs = root.querySelectorAll('img.crest-img[data-src]');
+  imgs.forEach((img) => {
+    const src = img.getAttribute('data-src');
+    if (src && !img.getAttribute('src')) {
+      img.setAttribute('src', src);
+    }
+  });
+}
+
+/**
+ * Display a random event at month start without pausing the loop.
+ * Uses EltheonJS templates `event-description` and `options-list`.
+ */
 function showEvent() {
   buildingUsed = false;
   // Arbeiter für Bauten zurücksetzen (neuer Monat)
@@ -510,6 +595,12 @@ function showEvent() {
   }
 }
 
+/**
+ * Render build options for the player province.
+ * - Disables options when resources/slots/worker availability are insufficient.
+ * - Adds a tooltip (title) explaining why an option is disabled.
+ * - Uses EltheonJS `options-list` where available.
+ */
 function showBuildOptions() {
   const buildContainer = document.getElementById('build-options');
   buildContainer.innerHTML = '';
@@ -602,13 +693,31 @@ function showBuildOptions() {
     }
   ];
   const buildModels = buildings.map((bld) => {
-    const canAfford = player.gold >= bld.cost.gold && player.food >= (bld.cost.food || 0);
-    const enabled = bld.available() && canAfford && !buildingUsed;
+    const canAffordGold = player.gold >= bld.cost.gold;
+    const canAffordFood = player.food >= (bld.cost.food || 0);
+    const canAfford = canAffordGold && canAffordFood;
+    const isAvailable = bld.available();
+    const enabled = isAvailable && canAfford && !buildingUsed && availableSlots > 0;
+    const reasons = [];
+    if (availableSlots <= 0) reasons.push('Keine Bauslots verfügbar');
+    if (!isAvailable) {
+      // More specific availability hints based on building name/state
+      if (bld.name === 'Kornspeicher' && player.buildings.includes('Kornspeicher')) reasons.push('Bereits gebaut');
+      if (bld.name === 'Markt' && player.hasMarket) reasons.push('Bereits gebaut');
+      if (bld.name === 'Kaserne' && player.hasBarracks) reasons.push('Bereits gebaut');
+      if (bld.name === 'Tempel' && player.temples >= 1) reasons.push('Maximale Anzahl erreicht');
+      if (bld.name === 'Fort' && player.hasFort) reasons.push('Bereits gebaut');
+      if (availableWorkers < bld.requiredWorkers) reasons.push('Nicht genug Arbeiter');
+    }
+    if (!canAffordGold) reasons.push('Nicht genug Gold');
+    if (!canAffordFood) reasons.push('Nicht genug Nahrung');
+    if (buildingUsed) reasons.push('Für diesen Monat bereits gebaut');
     const label = `${bld.name} – ${bld.description} (Kosten: ${bld.cost.gold}\u00A0Gold, ${bld.requiredWorkers}\u00A0Arbeiter)`;
     return {
       label,
       labelHtml: labelToHtml(label),
-      enabled
+      enabled,
+      tooltip: enabled ? '' : (reasons.join(' · ') || 'Nicht verfügbar')
     };
   });
   if (window.EltheonJS && window.EltheonJS.templatingExt) {
@@ -632,7 +741,11 @@ function showBuildOptions() {
     Array.from(tpl.element.querySelectorAll('button')).forEach(btn => {
       const lbl = btn.textContent || '';
       const m = buildModels.find(x => x.label === lbl);
-      if (m && !m.enabled) btn.disabled = true;
+      if (!m) return;
+      if (!m.enabled) btn.disabled = true;
+      if (m.tooltip) btn.title = m.tooltip;
+      // For accessibility
+      if (!m.enabled) btn.setAttribute('aria-disabled', 'true');
     });
     buildContainer.appendChild(tpl.element);
   } else {
@@ -642,9 +755,16 @@ function showBuildOptions() {
       btn.classList.add('btn', 'btn-secondary', 'mb-2');
       btn.innerHTML = `${bld.name} – ${bld.description} (Kosten: ${bld.cost.gold}\u00A0Gold, ${bld.requiredWorkers}\u00A0Arbeiter)`;
       const canAfford = player.gold >= bld.cost.gold && player.food >= (bld.cost.food || 0);
-      if (!bld.available() || !canAfford || buildingUsed) {
-        btn.disabled = true;
+      const reasons = [];
+      if (availableSlots <= 0) reasons.push('Keine Bauslots verfügbar');
+      if (!bld.available()) {
+        if (availableWorkers < bld.requiredWorkers) reasons.push('Nicht genug Arbeiter');
       }
+      if (!canAfford) reasons.push('Nicht genug Ressourcen');
+      if (buildingUsed) reasons.push('Für diesen Monat bereits gebaut');
+      if (!bld.available() || !canAfford || buildingUsed || availableSlots <= 0) btn.disabled = true;
+      if (reasons.length) btn.title = reasons.join(' · ');
+      if (btn.disabled) btn.setAttribute('aria-disabled', 'true');
       btn.addEventListener('click', () => {
         if (bld.available() && player.gold >= bld.cost.gold && player.food >= (bld.cost.food || 0) && !buildingUsed) {
           bld.action();
@@ -662,6 +782,12 @@ function showBuildOptions() {
 }
 
 // Rekrutierungsoptionen anzeigen
+/**
+ * Render recruit options for the player.
+ * - Barracks increase troop gains.
+ * - Disables options when gold is insufficient, adds tooltip why.
+ * - Uses EltheonJS `options-list` when available.
+ */
 function showRecruitOptions() {
   const recruitContainer = document.getElementById('recruit-options');
   recruitContainer.innerHTML = '';
@@ -684,7 +810,12 @@ function showRecruitOptions() {
       gainWorkers: 50
     }
   ];
-  const models = actions.map((a) => ({ label: a.label, labelHtml: labelToHtml(a.label), enabled: player.gold >= a.cost }));
+  const models = actions.map((a) => ({
+    label: a.label,
+    labelHtml: labelToHtml(a.label),
+    enabled: player.gold >= a.cost,
+    tooltip: player.gold >= a.cost ? '' : 'Nicht genug Gold'
+  }));
   if (window.EltheonJS && window.EltheonJS.templatingExt) {
     const opts = models.map(m => Object.assign({ btnClass: 'btn-secondary' }, m));
     const tpl = window.EltheonJS.templatingExt.render('options-list', { options: opts }, {
@@ -704,7 +835,10 @@ function showRecruitOptions() {
     Array.from(tpl.element.querySelectorAll('button')).forEach(btn => {
       const lbl = btn.textContent || '';
       const m = models.find(x => x.label === lbl);
-      if (m && !m.enabled) btn.disabled = true;
+      if (!m) return;
+      if (!m.enabled) btn.disabled = true;
+      if (m.tooltip) btn.title = m.tooltip;
+      if (!m.enabled) btn.setAttribute('aria-disabled', 'true');
     });
     recruitContainer.appendChild(tpl.element);
   } else {
@@ -727,58 +861,42 @@ function showRecruitOptions() {
   }
 }
 
+/**
+ * Resolve monthly economy for all provinces using DLD.logicEconomy,
+ * then advance the month and trigger next event.
+ * Requires `window.DLD.logicEconomy.applyMonthlyEconomy` to be present.
+ * @param {boolean} [autoShowEvent=true] - Whether to show next month's event.
+ */
 function nextMonth(autoShowEvent = true) {
-  // Ressourcen aktualisieren
+  // Resolve economy per province via module (no legacy fallback)
+  const econ = window.DLD && window.DLD.logicEconomy &&
+    typeof window.DLD.logicEconomy.applyMonthlyEconomy === 'function'
+    ? window.DLD.logicEconomy
+    : null;
+  if (!econ) {
+    // Hard requirement as requested: surface a clear error for dev visibility
+    throw new Error('DLD.logicEconomy.applyMonthlyEconomy not available – ensure assets/js/logic/economy.js is loaded before script.js');
+  }
   Object.keys(provinces).forEach(key => {
     const prov = provinces[key];
-    // Unterhalt vor Produktion (Truppen- und Arbeiter-Unterhalt)
-    const upF = Math.ceil(prov.troops / 100) * 6;
-    const upG = Math.ceil(prov.troops / 100) * 8;
-    // Arbeiter verbrauchen weniger
-    const upWF = Math.ceil(prov.workers / 100) * 4;
-    const upWG = Math.ceil(prov.workers / 100) * 6;
-    prov.food -= upF + upWF;
-    prov.gold -= upG + upWG;
-    // Konsequenzen bei Mangel
-    if (prov.food < 0) {
-      const deficit = -prov.food;
-      const deserters = Math.floor(deficit / 6) * 15;
-      prov.troops = Math.max(0, prov.troops - deserters);
-      prov.morale -= 5;
-      prov.food = 0;
-    }
-    if (prov.gold < 0) {
-      prov.gold = 0;
-      prov.morale -= 5;
-      if (prov.troops > 0) {
-        prov.troops = Math.max(0, prov.troops - 10);
-      }
-    }
-    // Produktion nach Moral-Faktor
-    const fHarvest = 1 + 0.4 * ((prov.morale - 50) / 50);
-    const fTax = 1 + 0.3 * ((prov.morale - 50) / 50);
-    let prodF = prov.baseF * fHarvest;
-    let taxG = prov.baseG * fTax;
-    // Gebäude-Boni
-    if (prov.hasMarket) {
-      taxG += 10;
-    }
-    // Tempel erhöhen monatlich die Moral
-    if (prov.temples && prov.temples > 0) {
-      prov.morale += 3 * prov.temples;
-    }
-    // Aktualisieren
-    prov.food = Math.min(prov.food + prodF, prov.foodCap);
-    prov.gold += taxG;
-    // Moral in Grenzen halten
-    prov.morale = Math.max(0, Math.min(100, prov.morale));
-    // Abrunden
-    prov.food = Math.round(prov.food);
-    prov.gold = Math.round(prov.gold);
+    const { prov: out } = econ.applyMonthlyEconomy(prov);
+    prov.food = out.food;
+    prov.gold = out.gold;
+    prov.morale = out.morale;
+    prov.troops = out.troops;
+    prov.foodCap = out.foodCap;
+    prov.hasMarket = !!out.hasMarket;
+    prov.temples = out.temples || prov.temples;
   });
-  // KI-Handlungen
-  aiActions(provinces.ai1);
-  aiActions(provinces.ai2);
+  // AI actions – require logicAI module (no legacy fallback)
+  const aiApi = window.DLD && window.DLD.logicAI && typeof window.DLD.logicAI.applyAI === 'function'
+    ? window.DLD.logicAI
+    : null;
+  if (!aiApi) {
+    throw new Error('DLD.logicAI.applyAI not available – ensure assets/js/logic/ai.js is loaded before script.js');
+  }
+  provinces.ai1 = aiApi.applyAI(provinces.ai1, { month, maxMonths });
+  provinces.ai2 = aiApi.applyAI(provinces.ai2, { month, maxMonths });
   // Monat voranschreiten
   month++;
   // Spielende prüfen
@@ -793,63 +911,12 @@ function nextMonth(autoShowEvent = true) {
   }
 }
 
-function aiActions(prov) {
-  // Einfache Heuristiken für KI
-  // Bauentscheidungen: Der Vasall baut ein Gebäude, wenn Slots frei sind und die Bedingungen erfüllt sind
-  const availableSlots = prov.buildingSlots - prov.buildings.length;
-  if (availableSlots > 0) {
-    // 1. Kornspeicher bauen, wenn Nahrung nahe am Cap und genug Gold
-    if (!prov.buildings.includes('Kornspeicher') && prov.gold >= 80 && prov.food > prov.foodCap * 0.8) {
-      prov.foodCap += 100;
-      prov.gold -= 80;
-      prov.buildings.push('Kornspeicher');
-    // 2. Markt bauen, wenn keiner vorhanden und genug Gold
-    } else if (!prov.hasMarket && prov.gold >= 100) {
-      prov.gold -= 100;
-      prov.hasMarket = true;
-      prov.buildings.push('Markt');
-    // 3. Kaserne bauen, wenn keine vorhanden, Truppen relativ niedrig und genug Gold
-    } else if (!prov.hasBarracks && prov.gold >= 120 && prov.troops < 200) {
-      prov.gold -= 120;
-      prov.hasBarracks = true;
-      prov.buildings.push('Kaserne');
-    // 4. Tempel bauen, wenn Moral unter 75, keiner vorhanden und genug Gold
-    } else if ((prov.temples || 0) < 1 && prov.gold >= 140 && prov.morale < 75) {
-      prov.gold -= 140;
-      prov.temples = (prov.temples || 0) + 1;
-      prov.buildings.push('Tempel');
-    // 5. Fort bauen, wenn Spiel fortgeschritten oder Truppen ausreichend und genug Gold
-    } else if (!prov.hasFort && prov.gold >= 160 && (month > maxMonths / 2 || prov.troops > 200)) {
-      prov.gold -= 160;
-      prov.hasFort = true;
-      prov.buildings.push('Fort');
-    }
-  }
-  // Nahrung kaufen, wenn niedrig
-  if (prov.food < prov.foodCap * 0.25 && prov.gold >= 15) {
-    prov.gold -= 15;
-    prov.food += 20;
-  }
-  // Moral erhöhen, wenn zu niedrig
-  if (prov.morale < 40 && prov.gold >= 10) {
-    prov.gold -= 10;
-    prov.morale += 5;
-  }
-  // Rekrutierungen: Wenn Truppen unter einem Schwellenwert liegen und genug Gold vorhanden
-  const troopThreshold = 150 + Math.max(0, month - 6) * 2; // steigt im Verlauf leicht an
-  if (prov.troops < troopThreshold && prov.gold >= 10) {
-    // Berechne Truppenstärke je nach Kaserne
-    const gain = prov.hasBarracks ? 15 : 10;
-    prov.gold -= 10;
-    prov.troops += gain;
-  }
-  // Arbeiter rekrutieren, wenn keine Bauprojekte möglich waren und Arbeiter niedrig
-  if (prov.workers < 50 && prov.gold >= 20) {
-    prov.gold -= 20;
-    prov.workers += 50;
-  }
-}
+// (legacy aiActions removed; AI now requires DLD.logicAI.applyAI)
 
+/**
+ * Stop the loop and render an end-of-game summary.
+ * Delegates to DLD.logicScore when available; otherwise uses inline formula.
+ */
 function endGame() {
   // Ergebnis anzeigen
   updateUI();
@@ -862,25 +929,29 @@ function endGame() {
   const optionsEl = document.getElementById('event-options');
   optionsEl.innerHTML = '';
   // Ergebnisdaten berechnen
-  let totalScore = 0;
-  const results = [];
-  Object.keys(provinces).forEach(key => {
-    const prov = provinces[key];
-    let score = prov.troops * 1 + prov.morale * 2 + prov.food * 0.5;
-    if (prov.hasFort) score += 150;
-    if (prov.temples && prov.temples > 0) score += prov.temples * 20;
-    if (prov.hasMarket) score += 10;
-    const rounded = Math.round(score);
-    totalScore += rounded;
-    results.push({ name: prov.name, score: rounded });
-  });
-  let rating = '';
-  if (totalScore > 2500) {
-    rating = 'Großartig! Euer Reich ist stark genug für den finalen Kampf.';
-  } else if (totalScore > 1500) {
-    rating = 'Nicht schlecht. Mit etwas Geschick könntet ihr bestehen.';
+  let results, totalScore, rating;
+  const scoreApi = window.DLD && window.DLD.logicScore;
+  if (scoreApi && typeof scoreApi.computeAllScores === 'function') {
+    const agg = scoreApi.computeAllScores(provinces);
+    results = agg.results;
+    totalScore = agg.totalScore;
+    rating = typeof scoreApi.rateTotal === 'function' ? scoreApi.rateTotal(totalScore) : '';
   } else {
-    rating = 'Das Reich ist schwach und könnte der bevorstehenden Invasion nicht standhalten.';
+    let total = 0; const res = [];
+    Object.keys(provinces).forEach(key => {
+      const prov = provinces[key];
+      let score = prov.troops * 1 + prov.morale * 2 + prov.food * 0.5;
+      if (prov.hasFort) score += 150;
+      if (prov.temples && prov.temples > 0) score += prov.temples * 20;
+      if (prov.hasMarket) score += 10;
+      const rounded = Math.round(score);
+      total += rounded;
+      res.push({ name: prov.name, score: rounded });
+    });
+    results = res; totalScore = total;
+    rating = (totalScore > 2500) ? 'Großartig! Euer Reich ist stark genug für den finalen Kampf.'
+      : (totalScore > 1500) ? 'Nicht schlecht. Mit etwas Geschick könntet ihr bestehen.'
+      : 'Das Reich ist schwach und könnte der bevorstehenden Invasion nicht standhalten.';
   }
   if (window.EltheonJS && window.EltheonJS.templatingExt) {
     const tpl = window.EltheonJS.templatingExt.render('end-summary', {
@@ -901,6 +972,7 @@ function endGame() {
 }
 
 // Initialisierung
+// Bootstrap the game once DOM is ready, initializing EltheonJS templating.
 window.addEventListener('DOMContentLoaded', () => {
   if (window.EltheonJS && window.EltheonJS.templatingExt) {
     try { window.EltheonJS.templatingExt.init(); } catch (_) {}
@@ -913,6 +985,10 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // Automatische Auflösung eines offenen Ereignisses mit der schlechtesten Option
+/**
+ * Auto-resolve an open event on month rollover by picking the worst option.
+ * Uses DLD.logicText.scoreOptionLabel if available.
+ */
 function autoResolvePendingEvent() {
   const panel = document.getElementById('event-panel');
   const isVisible = panel && !panel.classList.contains('hidden');
@@ -930,51 +1006,56 @@ function autoResolvePendingEvent() {
   currentEvent = null;
 }
 
-// Bewertet ein Options-Label grob nach Auswirkung (kleiner = schlechter)
+/**
+ * Score an option label by resource impact (lower is worse). Delegates to
+ * DLD.logicText.scoreOptionLabel if present; otherwise uses a local fallback.
+ * @param {string} label - The human readable option label.
+ * @returns {number} Score (lower means worse option).
+ */
 function scoreOptionLabel(label) {
+  const api = window.DLD && window.DLD.logicText && window.DLD.logicText.scoreOptionLabel;
+  if (typeof api === 'function') return api(label);
+  // Fallback: inline logic
   if (!label || typeof label !== 'string') return 0;
   const text = label;
   let score = 0;
-  // Erlaube verschiedenartige Minuszeichen
   const minusClass = "[\\-\u2010-\u2015\u2212\u2011\u2013]";
   const plusRe = /\+(\d+)\s*(Nahrung|Gold|Moral|Truppen|Arbeiter)/gi;
   const minusRe = new RegExp(minusClass + '(?:\u00A0)?(\\d+)\\s*(Nahrung|Gold|Moral|Truppen|Arbeiter)', 'gi');
   const weight = (unit) => ({ Nahrung: 1, Gold: 0.5, Moral: 2, Truppen: 1, Arbeiter: 0.5 })[unit] || 1;
   let m;
   while ((m = plusRe.exec(text)) !== null) {
-    const val = parseInt(m[1], 10) || 0;
-    const unit = m[2];
+    const val = parseInt(m[1], 10) || 0; const unit = m[2];
     score += val * weight(unit);
   }
   while ((m = minusRe.exec(text)) !== null) {
-    const val = parseInt(m[1], 10) || 0;
-    const unit = m[2];
+    const val = parseInt(m[1], 10) || 0; const unit = m[2];
     score -= val * weight(unit);
   }
-  if (/Ignorieren|Nichts tun|vertuschen|kein handel/i.test(text)) {
-    score -= 5;
-  }
+  if (/Ignorieren|Nichts tun|vertuschen|kein handel/i.test(text)) score -= 5;
   return score;
 }
 
-// Erzeugt HTML für Labels mit Ressourcen-Icons
+/**
+ * Convert an option label to HTML with resource icons. Delegates to
+ * DLD.logicText.labelToHtml if present; otherwise uses a local fallback.
+ * @param {string} label - The label to decorate with icons.
+ * @returns {string} HTML string.
+ */
 function labelToHtml(label) {
+  const api = window.DLD && window.DLD.logicText && window.DLD.logicText.labelToHtml;
+  if (typeof api === 'function') return api(label);
   if (!label) return '';
   const iconClass = {
-    Nahrung: 'icon-food',
-    Gold: 'icon-gold',
-    Moral: 'icon-morale',
-    Truppen: 'icon-troops',
-    Arbeiter: 'icon-workers'
+    Nahrung: 'icon-food', Gold: 'icon-gold', Moral: 'icon-morale',
+    Truppen: 'icon-troops', Arbeiter: 'icon-workers'
   };
-  // Ersetze Muster wie "+15 Moral" oder "-20 Gold" usw.
-  const minusClass = "[\-\u2010-\u2015\u2212\u2011\u2013]";
+  const minusClass = "[\\-\u2010-\u2015\u2212\u2011\u2013]";
   const re = new RegExp(`(${minusClass}?\\s*\\+?\\s*\\d+)\\s*(Nahrung|Gold|Moral|Truppen|Arbeiter)`, 'gi');
-  let html = label.replace(re, (m, num, unit) => {
+  return String(label).replace(re, (m, num, unit) => {
     const u = unit.charAt(0).toUpperCase() + unit.slice(1).toLowerCase();
     const cls = iconClass[u] || '';
     if (!cls) return m;
     return `${num}\u00A0<span class="icon ${cls}" aria-hidden="true"></span>`;
   });
-  return html;
 }

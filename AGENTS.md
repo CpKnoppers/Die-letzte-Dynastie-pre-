@@ -7,6 +7,7 @@
   - Scripts: `assets/js/script.js`, optional module `eltheonFull.esm.js`
   - Images: `assets/img/`
 - Design spec: `README.md` (German, game and economy details). Treat as source of truth.
+ - Backlog: `docs/backlog.md` (curated ideas → agent tickets).
 
 ## Development, Build, and Run
 - Static site (no build step). Serve locally to avoid CORS issues.
@@ -26,11 +27,18 @@
 - Cross‑browser sanity: latest Chrome and Firefox.
 - Console hygiene: no uncaught errors or noisy logs.
 - If adding logic modules, prefer lightweight unit tests (e.g., Jest) in `assets/js/__tests__/` with `*.test.js` and pure functions without DOM.
+ - Detailed checklists live in `docs/testing.md` (Smoke + feature‑spezifisch).
 
 ## Commit & Pull Request Guidelines
 - Commits: imperative, concise; prefer Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`). Example: `feat: add temple building and morale tick`.
 - Scope small; one topic per commit.
 - PRs: include summary, rationale, before/after screenshots for UI, test notes (manual steps), and link related issues.
+
+## Backlog & Tickets
+- Source of truth for upcoming work: `docs/backlog.md`.
+- Product Owner lists 3–5 priorisierte Ideen pro Batch (P1/P2/P3).
+- Agents wandeln Einträge in Mini‑Specs gemäß Template (Titel, Ziel, Scope, Akzeptanz, Dateien, Tests, Notizen) und verlinken PRs.
+- Guardrails: Loop nicht pausieren; Auto‑Resolve bei Monatswechsel; statische Seite ohne Build; keine Globals.
 
 ## Security & Configuration Tips
 - No secrets or tokens in the repo; this is a static site.
