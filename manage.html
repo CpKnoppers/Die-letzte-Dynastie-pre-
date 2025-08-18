@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dein Land verwalten – Die letzte Dynastie</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    .manage-header { text-align: center; margin: 20px 0; }
+    .upgrade-owned { opacity: 0.6; }
+  </style>
+  <script type="module" src="assets/js/eltheonFull.esm.js"></script>
+  <script src="assets/js/logic/meta.js"></script>
+  <script src="assets/js/logic/text.js"></script>
+</head>
+<body>
+  <div class="container my-4">
+    <header class="manage-header">
+      <h1>Dein Land verwalten</h1>
+      <p class="text-muted">Profil anpassen, Meta‑Fortschritt einsehen und Upgrades freischalten.</p>
+      <div class="d-flex justify-content-center gap-2 mt-2">
+        <a href="index.html" class="btn btn-outline-secondary">Zurück zur Einführung</a>
+        <a href="game.html" class="btn btn-primary">Zum Spiel</a>
+      </div>
+    </header>
+
+    <div class="row g-3">
+      <div class="col-12 col-lg-5">
+        <div class="card p-3">
+          <h2 class="h4">Profil</h2>
+          <div class="d-flex align-items-center gap-3 mb-2">
+            <img id="profile-crest" src="assets/img/crests/player.svg" width="40" height="40" class="rounded border" alt="Wappen"/>
+            <strong id="profile-name-preview">Dein Land</strong>
+          </div>
+          <form id="profile-form" class="mt-2">
+            <div class="mb-3">
+              <label for="player-name" class="form-label">Name</label>
+              <input type="text" id="player-name" class="form-control" maxlength="40" placeholder="Dein Land">
+            </div>
+            <div class="mb-2">
+              <div class="form-label">Wappen</div>
+              <div class="d-flex gap-3 align-items-center">
+                <label class="form-check-label d-flex align-items-center gap-2">
+                  <input class="form-check-input" type="radio" name="crest" value="assets/img/crests/player.svg" checked>
+                  <img src="assets/img/crests/player.svg" alt="Wappen 1" width="32" height="32" class="rounded border">
+                </label>
+                <label class="form-check-label d-flex align-items-center gap-2">
+                  <input class="form-check-input" type="radio" name="crest" value="assets/img/crests/ai1.svg">
+                  <img src="assets/img/crests/ai1.svg" alt="Wappen 2" width="32" height="32" class="rounded border">
+                </label>
+                <label class="form-check-label d-flex align-items-center gap-2">
+                  <input class="form-check-input" type="radio" name="crest" value="assets/img/crests/ai2.svg">
+                  <img src="assets/img/crests/ai2.svg" alt="Wappen 3" width="32" height="32" class="rounded border">
+                </label>
+              </div>
+            </div>
+            <div class="d-flex gap-2 mt-3">
+              <button type="submit" class="btn btn-primary">Speichern</button>
+              <button type="button" id="reset-profile" class="btn btn-outline-danger">Profil zurücksetzen</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="col-12 col-lg-7">
+        <div class="card p-3">
+          <h2 class="h4">Meta‑Fortschritt</h2>
+          <p class="mb-2">Verfügbare Siegel: <strong id="meta-currency">0</strong></p>
+          <h3 class="h6">Terraforming</h3>
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <span>Stufe: <strong id="terra-stage">Ödland</strong></span>
+            <button id="terra-up" class="btn btn-sm btn-success">Aufwerten</button>
+            <button id="terra-down" class="btn btn-sm btn-outline-secondary">Abwerten</button>
+          </div>
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <span>Palast‑Level: <strong id="hq-level">1</strong></span>
+            <button id="hq-inc" class="btn btn-sm btn-outline-primary">Level +1</button>
+            <button id="hq-dec" class="btn btn-sm btn-outline-secondary">Level −1</button>
+          </div>
+          <p class="mb-2">Loadout: <strong id="slot-usage">0/0</strong> Karten belegt</p>
+          <div id="loadout-cards" class="d-flex flex-wrap gap-2 mb-3"></div>
+          <h3 class="h6">Spezialgebäude (HQ‑Slots)</h3>
+          <div id="hq-buildings" class="d-grid gap-2 mb-3"></div>
+          <h3 class="h6 mt-2">Freischaltungen (Gebäude-/Baum-Nodes)</h3>
+          <div id="unlocks-list" class="d-grid gap-2 mb-3"></div>
+          <h3 class="h6">Loadout-Karten</h3>
+          <div id="upgrades-list" class="d-grid gap-2"></div>
+          <div class="d-flex gap-2 mt-3">
+            <button id="reset-meta" class="btn btn-outline-danger">Meta zurücksetzen</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Management page logic (profile + meta), no DOM dependencies beyond this page
+    function getStorage(){ return (window.EltheonJS && window.EltheonJS.storage && window.EltheonJS.storage.local) ? window.EltheonJS.storage.local : null; }
+    function getMeta(){ return (window.DLD && window.DLD.logicMeta) ? window.DLD.logicMeta : null; }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const storage = getStorage();
+      const metaApi = getMeta();
+      const form = document.getElementById('profile-form');
+      const nameInput = document.getElementById('player-name');
+      const crestPreview = document.getElementById('profile-crest');
+      const namePreview = document.getElementById('profile-name-preview');
+      const upgradesList = document.getElementById('upgrades-list');
+      const currencyEl = document.getElementById('meta-currency');
+      const hqLevelEl = document.getElementById('hq-level');
+      const slotUsageEl = document.getElementById('slot-usage');
+      const loadoutWrap = document.getElementById('loadout-cards');
+      const hqBuildingsWrap = document.getElementById('hq-buildings');
+      const terraStageEl = document.getElementById('terra-stage');
+      const unlocksList = document.getElementById('unlocks-list');
+
+      // Load profile
+      (async () => {
+        try {
+          if (!storage || !metaApi) return;
+          const profile = await metaApi.loadProfile(storage);
+          if (profile) {
+            if (profile.name) {
+              nameInput.value = profile.name;
+              namePreview.textContent = profile.name;
+            }
+            if (profile.crestImg) {
+              crestPreview.src = profile.crestImg;
+              const r = form.querySelector(`input[name="crest"][value="${profile.crestImg}"]`);
+              if (r) r.checked = true;
+            }
+          }
+        } catch(_) {}
+      })();
+      // Live preview
+      nameInput.addEventListener('input', () => { namePreview.textContent = nameInput.value.trim() || 'Dein Land'; });
+      form.addEventListener('change', (e) => {
+        if (e.target && e.target.name === 'crest') crestPreview.src = e.target.value;
+      });
+      // Save profile
+      form.addEventListener('submit', (e) => {
+        e.preventDefault(); if (!storage || !metaApi) return;
+        const sel = form.querySelector('input[name="crest"]:checked');
+        metaApi.saveProfile(storage, { name: nameInput.value.trim(), crestImg: sel ? sel.value : undefined });
+      });
+      document.getElementById('reset-profile').addEventListener('click', async () => {
+        const s = getStorage(); if (!s) return; await s.remove('profile');
+        nameInput.value = ''; namePreview.textContent = 'Dein Land'; crestPreview.src = 'assets/img/crests/player.svg';
+        const def = form.querySelector('input[name="crest"][value="assets/img/crests/player.svg"]'); if (def) def.checked = true;
+      });
+
+      // Meta list
+      function catalogMap() {
+        const map = new Map();
+        (metaApi.getUpgradesCatalog() || []).forEach(c => map.set(c.id, c));
+        return map;
+      }
+
+      function cardCounts(cards) {
+        const m = new Map();
+        cards.forEach(id => m.set(id, (m.get(id) || 0) + 1));
+        return m;
+      }
+
+      function ensureCards(m) {
+        return (m && m.loadout && Array.isArray(m.loadout.cards)) ? m.loadout.cards : [];
+      }
+
+      function hasUnlock(meta, id) {
+        return Array.isArray(meta.unlocks) && meta.unlocks.includes(id);
+      }
+
+      function getHQBuildingsCatalog() {
+        return [
+          { id: 'throne_vassal', label: 'Thronhalle der Vasallen (Diplomatie-Optionen für König)', slotType: 'throne', cost: 8, grantsUnlocks: [] },
+          { id: 'war_spy', label: 'Kriegsrat mit Spähnetz (Intel-Verbesserungen)', slotType: 'war', cost: 12, grantsUnlocks: ['tree:spycraft.intel.shrink1'] },
+          { id: 'logistics_office', label: 'Logistikamt (Bau-Limit-Erhöhungen)', slotType: 'logistics', cost: 10, grantsUnlocks: ['tree:workshop.limit.plus1'] },
+          { id: 'archive_chronicles', label: 'Archiv der Chroniken (Event-Pools/Report)', slotType: 'archive', cost: 10, grantsUnlocks: [], planned: true },
+          { id: 'mint', label: 'Münzprägestätte (Ökonomie-Varianten)', slotType: 'archive', cost: 12, grantsUnlocks: [], planned: true },
+          { id: 'seals_archive', label: 'Siegel-Archiv (+10% Siegel-Bonus freischalten)', slotType: 'archive', cost: 15, grantsUnlocks: ['tree:sealsarchive.bonus10'] },
+          { id: 'seals_chamber', label: 'Siegelkammer (Ertrags-Cap-Management)', slotType: 'archive', cost: 16, grantsUnlocks: [], planned: true }
+        ];
+      }
+
+      async function renderMeta() {
+        if (!storage || !metaApi) return;
+        const meta = await metaApi.loadMeta(storage);
+        const catalog = metaApi.getUpgradesCatalog();
+        const unlockCats = metaApi.getUnlocksCatalog();
+        currencyEl.textContent = meta.seals || 0;
+        // Terraforming
+        const stages = metaApi.getTerraformStages();
+        const stage = (meta.realm && typeof meta.realm.terraformStage === 'number') ? meta.realm.terraformStage : 0;
+        terraStageEl.textContent = metaApi.getTerraformLabel(stage);
+        // HQ / Slots
+        const level = (meta.hq && meta.hq.level) || 1;
+        hqLevelEl.textContent = level;
+        const maxSlots = (typeof metaApi.getMaxSlots === 'function') ? metaApi.getMaxSlots(level) : 2;
+        const cards = ensureCards(meta);
+        slotUsageEl.textContent = `${cards.length}/${maxSlots}`;
+        loadoutWrap.innerHTML = '';
+        const cmap = catalogMap();
+        cards.forEach((id, idx) => {
+          const pill = document.createElement('span');
+          pill.className = 'badge text-bg-secondary d-inline-flex align-items-center gap-1';
+          pill.textContent = (cmap.get(id)?.label) || id;
+          const rm = document.createElement('button');
+          rm.type = 'button'; rm.className = 'btn btn-sm btn-outline-light'; rm.textContent = '×';
+          rm.addEventListener('click', async () => {
+            const latest = await metaApi.loadMeta(storage);
+            const arr = ensureCards(latest);
+            const removed = arr.splice(idx, 1); // remove one occurrence
+            latest.loadout.cards = arr;
+            // Respec refund 60%
+            const cost = (cmap.get(removed[0])?.cost) || 0;
+            latest.seals = (latest.seals || 0) + Math.floor(cost * 0.6);
+            await metaApi.saveMeta(storage, latest);
+            renderMeta();
+          });
+          pill.appendChild(rm);
+          loadoutWrap.appendChild(pill);
+        });
+        // HQ Buildings section
+        await renderHQBuildings(meta);
+
+        // Unlocks section
+        unlocksList.innerHTML = '';
+        unlockCats.forEach(u => {
+          const owned = hasUnlock(meta, u.id);
+          const btn = document.createElement('button');
+          btn.className = 'btn ' + (owned ? 'btn-outline-secondary' : 'btn-outline-success');
+          btn.textContent = owned ? `${u.label} (freigeschaltet)` : `${u.label} – Kosten: ${u.cost} Siegel`;
+          btn.disabled = owned || (meta.seals || 0) < u.cost;
+          btn.addEventListener('click', async () => {
+            const latest = await metaApi.loadMeta(storage);
+            if (hasUnlock(latest, u.id)) return;
+            if ((latest.seals || 0) < u.cost) return;
+            latest.seals = (latest.seals || 0) - u.cost;
+            latest.unlocks = Array.isArray(latest.unlocks) ? latest.unlocks.concat(u.id) : [u.id];
+            await metaApi.saveMeta(storage, latest);
+            renderMeta();
+          });
+          unlocksList.appendChild(btn);
+        });
+
+        upgradesList.innerHTML = '';
+        const earnedNow = 0;
+        const counts = cardCounts(cards);
+        catalog.forEach(u => {
+          const isOwned = ensureCards(meta).includes(u.id);
+          const btn = document.createElement('button');
+          btn.className = 'btn btn-secondary' + (isOwned ? ' upgrade-owned' : '');
+          const reqOk = (!Array.isArray(u.requires) || u.requires.every(r => hasUnlock(meta, r))) &&
+                        (!u.slotType || (meta.hq && Array.isArray(meta.hq.buildings) && meta.hq.buildings.some(b => b.slotType === u.slotType)));
+          const needText = !reqOk ? (Array.isArray(u.requires) ? ' · (benötigt Freischaltung/HQ)' : ' · (benötigt HQ)') : '';
+          btn.textContent = isOwned ? `${u.label} (freigeschaltet)` : `${u.label} – Kosten: ${u.cost} Siegel${needText}`;
+          // Enforce slot capacity and caps
+          const levelNow = (meta.hq && meta.hq.level) || 1;
+          const maxNow = (typeof metaApi.getMaxSlots === 'function') ? metaApi.getMaxSlots(levelNow) : 2;
+          const capacityFull = cards.length >= maxNow;
+          const buildCapExceeded = (u.id === 'build_limit_plus_1') && ((counts.get('build_limit_plus_1') || 0) >= 2);
+          btn.disabled = isOwned || !reqOk || ((meta.seals || 0) + earnedNow) < u.cost || capacityFull || buildCapExceeded;
+          btn.addEventListener('click', async () => {
+            const latest = await metaApi.loadMeta(storage);
+            const already = ensureCards(latest).includes(u.id);
+            if (already) return;
+            if ((Array.isArray(u.requires) && !u.requires.every(r => hasUnlock(latest, r))) || (u.slotType && !(latest.hq && Array.isArray(latest.hq.buildings) && latest.hq.buildings.some(b => b.slotType === u.slotType)))) return;
+            const levelLatest = (latest.hq && latest.hq.level) || 1;
+            const maxLatest = (typeof metaApi.getMaxSlots === 'function') ? metaApi.getMaxSlots(levelLatest) : 2;
+            const cur = ensureCards(latest);
+            if (cur.length >= maxLatest) return;
+            if (((latest.seals || 0) + earnedNow) < u.cost) return;
+            if (u.id === 'build_limit_plus_1') {
+              const cnt = cur.filter(id => id === 'build_limit_plus_1').length;
+              if (cnt >= 2) return;
+            }
+            latest.seals = ((latest.seals || 0) + earnedNow) - u.cost;
+            latest.loadout = latest.loadout || { cards: [] };
+            latest.loadout.cards = cur.concat(u.id);
+            await metaApi.saveMeta(storage, latest);
+            await renderMeta();
+          });
+          upgradesList.appendChild(btn);
+        });
+      }
+      renderMeta();
+
+      // Terraform buttons
+      document.getElementById('terra-up').addEventListener('click', async () => {
+        const meta = await metaApi.loadMeta(storage);
+        const stages = metaApi.getTerraformStages();
+        const current = (meta.realm && typeof meta.realm.terraformStage === 'number') ? meta.realm.terraformStage : 0;
+        const next = Math.min(stages.length - 1, current + 1);
+        if (next === current) return;
+        const cost = stages[next].cost || 0;
+        if ((meta.seals || 0) < cost) return;
+        meta.seals = (meta.seals || 0) - cost;
+        meta.realm = meta.realm || {};
+        meta.realm.terraformStage = next;
+        await metaApi.saveMeta(storage, meta);
+        renderMeta();
+      });
+      document.getElementById('terra-down').addEventListener('click', async () => {
+        const meta = await metaApi.loadMeta(storage);
+        const current = (meta.realm && typeof meta.realm.terraformStage === 'number') ? meta.realm.terraformStage : 0;
+        const prev = Math.max(0, current - 1);
+        if (prev === current) return;
+        meta.realm = meta.realm || {};
+        meta.realm.terraformStage = prev;
+        await metaApi.saveMeta(storage, meta);
+        renderMeta();
+      });
+
+      // HQ Buildings UI
+      async function renderHQBuildings(meta) {
+        hqBuildingsWrap.innerHTML = '';
+        const level = (meta.hq && meta.hq.level) || 1;
+        const slots = (typeof metaApi.getSlotTypesForLevel === 'function') ? metaApi.getSlotTypesForLevel(level) : ['throne','logistics'];
+        const current = (meta.hq && Array.isArray(meta.hq.buildings)) ? meta.hq.buildings : [];
+        const usedByType = new Map();
+        current.forEach(b => usedByType.set(b.slotType, (usedByType.get(b.slotType) || 0) + 1));
+        const cat = getHQBuildingsCatalog();
+        // Show current
+        if (current.length > 0) {
+          const row = document.createElement('div');
+          row.className = 'd-flex flex-wrap gap-2 mb-2';
+          current.forEach((bld, idx) => {
+            const pill = document.createElement('span');
+            pill.className = 'badge text-bg-dark d-inline-flex align-items-center gap-1';
+            pill.textContent = `${bld.label} [${bld.slotType}]`;
+            const rm = document.createElement('button'); rm.className = 'btn btn-sm btn-outline-light'; rm.textContent = '×';
+            rm.addEventListener('click', async () => {
+              const latest = await metaApi.loadMeta(storage);
+              latest.hq = latest.hq || { level: 1 };
+              const arr = Array.isArray(latest.hq.buildings) ? latest.hq.buildings : [];
+              arr.splice(idx, 1);
+              latest.hq.buildings = arr;
+              // No refund in prototype; optionally remove granted unlocks
+              await metaApi.saveMeta(storage, latest);
+              renderMeta();
+            });
+            pill.appendChild(rm);
+            row.appendChild(pill);
+          });
+          hqBuildingsWrap.appendChild(row);
+        }
+        // Show available
+        cat.forEach(def => {
+          const btn = document.createElement('button');
+          btn.className = 'btn ' + (def.planned ? 'btn-outline-secondary' : 'btn-outline-primary');
+          btn.textContent = `${def.label} – Slot: ${def.slotType} – Kosten: ${def.cost} Siegel${def.planned ? ' (geplant)' : ''}`;
+          const slotCap = slots.filter(s => s === def.slotType).length;
+          const used = usedByType.get(def.slotType) || 0;
+          const hasSlot = used < slotCap;
+          const hasFunds = ((meta.seals || 0) >= def.cost);
+          btn.disabled = def.planned || !hasSlot || !hasFunds;
+          btn.addEventListener('click', async () => {
+            if (def.planned) return;
+            const latest = await metaApi.loadMeta(storage);
+            const level = (latest.hq && latest.hq.level) || 1;
+            const slots = (typeof metaApi.getSlotTypesForLevel === 'function') ? metaApi.getSlotTypesForLevel(level) : ['throne','logistics'];
+            const usedMap = new Map();
+            const arr = (latest.hq && Array.isArray(latest.hq.buildings)) ? latest.hq.buildings : [];
+            arr.forEach(b => usedMap.set(b.slotType, (usedMap.get(b.slotType) || 0) + 1));
+            const cap = slots.filter(s => s === def.slotType).length;
+            if ((usedMap.get(def.slotType) || 0) >= cap) return;
+            if ((latest.seals || 0) < def.cost) return;
+            // Add building
+            latest.hq = latest.hq || { level: 1 };
+            latest.hq.buildings = arr.concat({ id: def.id, label: def.label, slotType: def.slotType });
+            latest.seals = (latest.seals || 0) - def.cost;
+            // Grant unlocks
+            if (Array.isArray(def.grantsUnlocks) && def.grantsUnlocks.length > 0) {
+              latest.unlocks = Array.isArray(latest.unlocks) ? Array.from(new Set(latest.unlocks.concat(def.grantsUnlocks))) : def.grantsUnlocks.slice();
+            }
+            await metaApi.saveMeta(storage, latest);
+            renderMeta();
+          });
+          hqBuildingsWrap.appendChild(btn);
+        });
+      }
+
+      // HQ Level buttons (placeholder costs)
+      document.getElementById('hq-inc').addEventListener('click', async () => {
+        const meta = await metaApi.loadMeta(storage);
+        const next = Math.min(3, ((meta.hq && meta.hq.level) || 1) + 1);
+        if (!meta.hq) meta.hq = { level: 1 };
+        if (next === meta.hq.level) return;
+        const cost = next === 2 ? 10 : 20; // placeholder costs
+        if ((meta.seals || 0) < cost) return;
+        meta.seals = (meta.seals || 0) - cost;
+        meta.hq.level = next;
+        await metaApi.saveMeta(storage, meta);
+        renderMeta();
+      });
+      document.getElementById('hq-dec').addEventListener('click', async () => {
+        const meta = await metaApi.loadMeta(storage);
+        const prev = Math.max(1, ((meta.hq && meta.hq.level) || 1) - 1);
+        if (!meta.hq) meta.hq = { level: 1 };
+        if (prev === meta.hq.level) return;
+        // No refund on level down in prototype; trim excess cards if needed
+        meta.hq.level = prev;
+        const maxSlots = (typeof metaApi.getMaxSlots === 'function') ? metaApi.getMaxSlots(prev) : 2;
+        if (meta.loadout && Array.isArray(meta.loadout.cards) && meta.loadout.cards.length > maxSlots) {
+          meta.loadout.cards = meta.loadout.cards.slice(0, maxSlots);
+        }
+        await metaApi.saveMeta(storage, meta);
+        renderMeta();
+      });
+
+      document.getElementById('reset-meta').addEventListener('click', async () => {
+        const s = getStorage(); if (!s) return; await s.remove('metaProgress');
+        renderMeta();
+      });
+    });
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+# Example tree stub for Farm
+id: farm_tree
+nodes:
+  - id: farm.advisor.forecast_1
+    title: Verwalter der Felder
+    cost: { seals: 10 }
+    effects:
+      - { type: forecast_once, id: harvest }
+

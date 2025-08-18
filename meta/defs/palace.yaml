@@ -1,0 +1,9 @@
+# Minimal placeholder for Palace/HQ levels and slots
+levels:
+  1:
+    slots: [throne, logistics]
+  2:
+    slots: [throne, logistics, war]
+  3:
+    slots: [throne, logistics, war, archive]
+

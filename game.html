@@ -114,8 +114,17 @@
       <div id="day-progress" class="day-progress" aria-hidden="true">
         <div class="bar"></div>
       </div>
+      <div class="mt-2">
+        <button id="profile-reset-btn" class="btn btn-sm btn-outline-secondary">Profil zurücksetzen</button>
+      </div>
+      <div id="run-availability" class="run-availability mt-2" aria-live="polite"></div>
     </header>
     <main>
+      <!-- Meta Actions (enabled by availability tokens) -->
+      <section id="meta-actions" class="panel hidden">
+        <h2>Maßnahmen</h2>
+        <div id="meta-actions-body" class="d-grid gap-2"></div>
+      </section>
       <!-- Spielbereich: getrennt nach Spieler- und Vasallen-Provinzen -->
       <section id="player-province" class="provinces">
         <!-- Die Provinzkarte des Spielers wird dynamisch eingefügt -->
@@ -147,6 +156,7 @@
   <!-- Eltheon Framework -->
   <script type="module" src="assets/js/eltheonFull.esm.js"></script>
   <!-- Refactor: pure logic modules (UMD attached to window.DLD.*) -->
+  <script src="assets/js/logic/meta.js"></script>
   <script src="assets/js/logic/text.js"></script>
   <script src="assets/js/logic/ai.js"></script>
   <script src="assets/js/logic/score.js"></script>

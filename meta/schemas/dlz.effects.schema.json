@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "dlz.effects.schema.json",
+  "type": "object",
+  "required": ["type"],
+  "properties": {
+    "type": {"type": "string"},
+    "resource": {"type": "string", "enum": ["gold","nahrung","soldaten","arbeiter","moral"]},
+    "delta": {"type": "number"},
+    "poolId": {"type": "string"},
+    "weightDelta": {"type": "number"},
+    "minusPercentagePoints": {"type": "number", "minimum": 0},
+    "floor": {"type": "number", "minimum": 10},
+    "percent": {"type": "number", "minimum": 0, "maximum": 100},
+    "scope": {"type": "string", "enum": ["win_only"]},
+    "featureId": {"type": "string"},
+    "amount": {"type": "number"},
+    "id": {"type": "string"}
+  }
+}
+

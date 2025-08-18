@@ -101,3 +101,16 @@
 ### Notes for Contributors
 - When adding new option labels, keep resource words (Nahrung/Gold/Moral/Truppen/Arbeiter) so the iconizer can detect and decorate them.
 - For new provinces, you can set `crestImg` (prefer square SVG/PNG ~26–64px) or rely on `crestText` fallback.
+
+## Session Progress (2025-08-18)
+
+- Meta persistence: added `assets/js/logic/meta.js` with unified profile (`seals`, `hq`, `realm`, `loadout`, `unlocks`) and migration from legacy keys.
+- Management UI: new `manage.html` for profile, Terraforming (0–4), HQ levels/slots, HQ special buildings, unlock nodes, and loadout cards with caps/requirements.
+- Terraforming: stages apply start bonuses and event weight shifts via `exportRunStart`; UI to invest seals.
+- HQ buildings: Thronhalle, Kriegsrat, Logistikamt, Siegel‑Archiv live; planned: Archiv der Chroniken, Münzprägestätte, Siegelkammer.
+- Gating: loadout cards require unlocks and matching HQ slot type; slot capacity based on HQ level.
+- Run integration: game boot applies run‑start package; header shows availability badges; “Maßnahmen” panel enables monthly actions (Diplomatie/Aufklärung) without pausing loop.
+- Seals bugfix: migration no longer overwrites saved seals with default seed; new profiles start with 50 seals for testing.
+- Misc: availability badges styling; small unit test for meta bonuses; seasonal banners preload; various UI refinements.
+
+Next: bind cards to explicit slot capacities, add owned‑cards inventory, wire Archiv/Mint effects into events/economy, surface diplomacy/intel with richer UI.

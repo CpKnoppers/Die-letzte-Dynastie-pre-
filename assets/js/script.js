@@ -102,6 +102,12 @@ const DEFAULT_HEADER_IMG = 'assets/img/header.png';
 let currentSeasonShown = '';
 let seasonPreloaded = false;
 
+// Persistence/meta helpers
+const getStorage = () => (window.EltheonJS && window.EltheonJS.storage && window.EltheonJS.storage.local) ? window.EltheonJS.storage.local : null;
+const getMetaApi = () => (window.DLD && window.DLD.logicMeta) ? window.DLD.logicMeta : null;
+let runAvailability = [];
+const actionUse = { diplomacyMonth: 0, reconMonth: 0 };
+
 /**
  * Format a Date object as DD.MM.YYYY string (delegates to logicDatetime).
  * @param {Date} d - The date to format.
@@ -140,6 +146,83 @@ function updateDateUI() {
   }
   // Update seasonal banner if season changed
   updateSeasonBanner(currentDate);
+}
+
+/**
+ * Render small availability badges in the header.
+ * @param {string[]} tokens
+ */
+function renderAvailability(tokens) {
+  const el = document.getElementById('run-availability');
+  if (!el) return;
+  el.innerHTML = '';
+  if (!Array.isArray(tokens) || tokens.length === 0) return;
+  const label = (t) => ({
+    king_diplomacy: 'Diplomatie',
+    intel_recon: 'Aufklärung',
+    seal_economy: 'Siegelbonus'
+  }[t] || t);
+  const iconCls = (t) => ({
+    king_diplomacy: 'icon-diplomacy',
+    intel_recon: 'icon-intel',
+    seal_economy: 'icon-seal'
+  }[t] || '');
+  tokens.forEach(t => {
+    const span = document.createElement('span');
+    span.className = 'ability-badge';
+    const icon = document.createElement('i');
+    icon.className = `ability-icon ${iconCls(t)}`;
+    icon.setAttribute('aria-hidden', 'true');
+    const text = document.createElement('span');
+    text.textContent = label(t);
+    span.appendChild(icon);
+    span.appendChild(text);
+    el.appendChild(span);
+  });
+}
+
+/**
+ * Render interactive actions based on availability tokens.
+ * Actions are limited to once per month each.
+ */
+function renderActions() {
+  const wrap = document.getElementById('meta-actions');
+  const body = document.getElementById('meta-actions-body');
+  if (!wrap || !body) return;
+  body.innerHTML = '';
+  if (!Array.isArray(runAvailability) || runAvailability.length === 0) {
+    wrap.classList.add('hidden');
+    return;
+  }
+  const actions = [];
+  if (runAvailability.includes('king_diplomacy')) {
+    actions.push({
+      id: 'act-tax', label: 'Steuererhöhung ( +20 Gold, −5 Moral )',
+      canRun: () => actionUse.diplomacyMonth !== month,
+      run: () => { provinces.player.gold += 20; provinces.player.morale = Math.max(0, provinces.player.morale - 5); actionUse.diplomacyMonth = month; }
+    }, {
+      id: 'act-price', label: 'Brotpreisbindung ( −10 Gold, +5 Moral )',
+      canRun: () => actionUse.diplomacyMonth !== month,
+      run: () => { provinces.player.gold = Math.max(0, provinces.player.gold - 10); provinces.player.morale = Math.min(100, provinces.player.morale + 5); actionUse.diplomacyMonth = month; }
+    });
+  }
+  if (runAvailability.includes('intel_recon')) {
+    actions.push({
+      id: 'act-recon', label: 'Späher aussenden ( −10 Gold, +5 Moral )',
+      canRun: () => actionUse.reconMonth !== month,
+      run: () => { provinces.player.gold = Math.max(0, provinces.player.gold - 10); provinces.player.morale = Math.min(100, provinces.player.morale + 5); actionUse.reconMonth = month; }
+    });
+  }
+  if (actions.length === 0) { wrap.classList.add('hidden'); return; }
+  actions.forEach(a => {
+    const btn = document.createElement('button');
+    btn.className = 'btn btn-outline-primary';
+    btn.textContent = a.label;
+    btn.disabled = !a.canRun();
+    btn.addEventListener('click', () => { if (a.canRun()) { a.run(); updateUI(); renderActions(); }});
+    body.appendChild(btn);
+  });
+  wrap.classList.remove('hidden');
 }
 
 /**
@@ -944,6 +1027,8 @@ function nextMonth(autoShowEvent = true) {
   provinces.ai2 = aiApi.applyAI(provinces.ai2, { month, maxMonths });
   // Monat voranschreiten
   month++;
+  // Refresh actions availability for the new month
+  renderActions();
   // Spielende prüfen
   if (month > maxMonths) {
     endGame();
@@ -963,9 +1048,7 @@ function nextMonth(autoShowEvent = true) {
  * Delegates to DLD.logicScore when available; otherwise uses inline formula.
  */
 function endGame() {
-  // Ergebnis anzeigen
   updateUI();
-  // Timer/Loop anhalten
   stopLoop();
   const panel = document.getElementById('event-panel');
   panel.classList.remove('hidden');
@@ -978,8 +1061,7 @@ function endGame() {
   const scoreApi = window.DLD && window.DLD.logicScore;
   if (scoreApi && typeof scoreApi.computeAllScores === 'function') {
     const agg = scoreApi.computeAllScores(provinces);
-    results = agg.results;
-    totalScore = agg.totalScore;
+    results = agg.results; totalScore = agg.totalScore;
     rating = typeof scoreApi.rateTotal === 'function' ? scoreApi.rateTotal(totalScore) : '';
   } else {
     let total = 0; const res = [];
@@ -990,8 +1072,7 @@ function endGame() {
       if (prov.temples && prov.temples > 0) score += prov.temples * 20;
       if (prov.hasMarket) score += 10;
       const rounded = Math.round(score);
-      total += rounded;
-      res.push({ name: prov.name, score: rounded });
+      total += rounded; res.push({ name: prov.name, score: rounded });
     });
     results = res; totalScore = total;
     rating = (totalScore > 2500) ? 'Großartig! Euer Reich ist stark genug für den finalen Kampf.'
@@ -999,14 +1080,66 @@ function endGame() {
       : 'Das Reich ist schwach und könnte der bevorstehenden Invasion nicht standhalten.';
   }
   if (window.EltheonJS && window.EltheonJS.templatingExt) {
-    const tpl = window.EltheonJS.templatingExt.render('end-summary', {
-      results,
-      totalScore,
-      rating
-    });
+    const tpl = window.EltheonJS.templatingExt.render('end-summary', { results, totalScore, rating });
     optionsEl.appendChild(tpl.element);
+    // Meta: Siegel gutschreiben + Upgrades freischalten
+    try {
+      const metaApi = getMetaApi();
+      const storage = getStorage();
+      if (metaApi && storage) {
+  metaApi.loadMeta(storage).then((meta) => {
+          const bonusPct = (typeof metaApi.getSealsBonusPercent === 'function') ? metaApi.getSealsBonusPercent(meta) : 0;
+          let earned = metaApi.computeRewards(totalScore);
+          if (bonusPct && bonusPct > 0) {
+            const capped = Math.min(20, bonusPct);
+            earned = Math.floor(earned * (1 + capped / 100));
+          }
+          meta.seals = (meta.seals || 0) + earned;
+          metaApi.saveMeta(storage, meta);
+          const wrap = document.createElement('div');
+          wrap.className = 'mt-3';
+          const p = document.createElement('p');
+          p.textContent = `Belohnungen: +${earned} Siegel · Bank: ${meta.seals}`;
+          wrap.appendChild(p);
+          const btns = document.createElement('div');
+          btns.className = 'd-grid gap-2';
+          const catalog = typeof metaApi.getUpgradesCatalog === 'function' ? metaApi.getUpgradesCatalog() : [];
+          const ensureCards = (m) => (m && m.loadout && Array.isArray(m.loadout.cards)) ? m.loadout.cards : [];
+          catalog.forEach(u => {
+            const b = document.createElement('button');
+            b.className = 'btn btn-secondary';
+            const owned = ensureCards(meta).includes(u.id);
+            b.textContent = owned ? `${u.label} (bereits freigeschaltet)` : `${u.label} – Kosten: ${u.cost} Siegel`;
+            b.disabled = owned || (meta.seals || 0) < u.cost;
+            b.addEventListener('click', async () => {
+              const latest = await metaApi.loadMeta(storage);
+              const has = ensureCards(latest).includes(u.id);
+              if (has) return;
+              if ((latest.seals || 0) < u.cost) return;
+              latest.seals = (latest.seals || 0) - u.cost;
+              latest.loadout = latest.loadout || { cards: [] };
+              latest.loadout.cards = ensureCards(latest).concat(u.id);
+              metaApi.saveMeta(storage, latest);
+              b.textContent = `${u.label} (freigeschaltet)`;
+              b.disabled = true;
+              p.textContent = `Belohnungen: +${earned} Siegel · Bank: ${latest.seals}`;
+            });
+            btns.appendChild(b);
+          });
+          wrap.appendChild(btns);
+          const reset = document.createElement('button');
+          reset.className = 'btn btn-outline-danger mt-2';
+          reset.textContent = 'Meta zurücksetzen';
+          reset.addEventListener('click', async () => {
+            await storage.remove('metaProgress');
+            wrap.querySelectorAll('button').forEach(btn => { if (btn !== reset) btn.disabled = false; });
+          });
+          wrap.appendChild(reset);
+          optionsEl.appendChild(wrap);
+        });
+      }
+    } catch (_) { /* ignore meta UI errors */ }
   } else {
-    // Fallback auf Text
     let scoreboard = 'Endbilanz – WarScore aller Provinzen:\n';
     results.forEach(res => { scoreboard += `${res.name}: ${res.score}\n`; });
     scoreboard += `Gesamt-Score: ${totalScore}\n` + rating;
@@ -1022,9 +1155,61 @@ window.addEventListener('DOMContentLoaded', () => {
   if (window.EltheonJS && window.EltheonJS.templatingExt) {
     try { window.EltheonJS.templatingExt.init(); } catch (_) {}
   }
+  // Load profile/meta and apply to starting state
+  try {
+    const storage = getStorage();
+    const metaApi = getMetaApi();
+    if (storage && metaApi) {
+      // Profile
+      metaApi.loadProfile(storage).then((profile) => {
+        if (profile && (profile.name || profile.crestImg)) {
+          if (profile.name) provinces.player.name = String(profile.name);
+          if (profile.crestImg) provinces.player.crestImg = String(profile.crestImg);
+          updateUI();
+        }
+      });
+      // Meta run-start package (terraform, loadout, HQ availability)
+      metaApi.loadMeta(storage).then((meta) => {
+        const pkg = (typeof metaApi.exportRunStart === 'function') ? metaApi.exportRunStart(meta) : null;
+        if (pkg) {
+          const b = pkg.realmStart || {};
+          if (b.foodCapDelta) provinces.player.foodCap = (provinces.player.foodCap || 0) + b.foodCapDelta;
+          if (b.food) provinces.player.food = (provinces.player.food || 0) + b.food;
+          if (b.workers) provinces.player.workers = (provinces.player.workers || 0) + b.workers;
+          if (b.morale) provinces.player.morale = Math.min(100, (provinces.player.morale || 0) + b.morale);
+          if (b.baseG) provinces.player.baseG = (provinces.player.baseG || 0) + b.baseG;
+          if (pkg.buildLimitDelta) provinces.player.buildingSlots = (provinces.player.buildingSlots || 0) + pkg.buildLimitDelta;
+          runAvailability = Array.isArray(pkg.availability) ? pkg.availability : [];
+          renderAvailability(runAvailability);
+          renderActions();
+          updateUI();
+        } else {
+          // Fallback to simple meta bonuses for legacy profiles
+          provinces.player = metaApi.applyMetaBonuses(provinces.player, meta);
+          updateUI();
+        }
+      });
+    }
+  } catch (_) { /* ignore persistence errors */ }
+  // In-game profile reset
+  try {
+    const btn = document.getElementById('profile-reset-btn');
+    if (btn) {
+      btn.addEventListener('click', async () => {
+        const storage = getStorage();
+        if (!storage) return;
+        await storage.remove('profile');
+        // Reset to defaults
+        provinces.player.name = 'Dein Land';
+        provinces.player.crestImg = 'assets/img/crests/player.svg';
+        updateUI();
+      });
+    }
+  } catch (_) { /* noop */ }
   // Preload seasonal banners (winter/spring/summer/autumn)
   preloadAllSeasonBanners();
   updateUI();
+  renderActions();
   showBuildOptions();
   // Loop starten und initiales Ereignis anzeigen (ohne Pause, Option A)
   startLoop();

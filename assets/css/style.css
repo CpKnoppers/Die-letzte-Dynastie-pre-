@@ -359,6 +359,25 @@ footer {
   font-size: 0.8rem;
 }
 
+/* Run availability badges */
+.run-availability { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; }
+.run-availability .ability-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(90, 62, 24, 0.12);
+  color: #5a3e18;
+  font-size: 0.85rem;
+  border: 1px solid rgba(90,62,24,0.2);
+}
+.run-availability .ability-icon { width: 16px; height: 16px; display: inline-block; background-color: currentColor; -webkit-mask-size: contain; mask-size: contain; -webkit-mask-position: center; mask-position: center; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; }
+/* Placeholder icons using existing masks where it fits */
+.run-availability .icon-seal { -webkit-mask-image: url('../img/icons/small/gold.png'); mask-image: url('../img/icons/small/gold.png'); }
+.run-availability .icon-intel { -webkit-mask-image: url('../img/icons/small/morale.png'); mask-image: url('../img/icons/small/morale.png'); }
+.run-availability .icon-diplomacy { -webkit-mask-image: url('../img/icons/small/workers.png'); mask-image: url('../img/icons/small/workers.png'); }
+
 /* Mobile-Layout-Anpassungen */
 @media (max-width: 768px) {
   main {

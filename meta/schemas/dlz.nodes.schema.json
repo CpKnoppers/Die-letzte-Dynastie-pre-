@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "dlz.nodes.schema.json",
+  "type": "object",
+  "required": ["id","title","cost","effects"],
+  "properties": {
+    "id": {"type": "string"},
+    "title": {"type": "string"},
+    "cost": {
+      "type": "object",
+      "properties": {
+        "seals": {"type": "integer", "minimum": 0},
+        "requires": {"type": "array", "items": {"type": "string"}}
+      },
+      "required": ["seals"]
+    },
+    "effects": {"type": "array", "items": {"$ref": "dlz.effects.schema.json"}},
+    "caps": {"type": "array", "items": {"type": "string"}}
+  }
+}
+
